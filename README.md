@@ -1,6 +1,6 @@
-# 停靠系统 (DockingSystem Standalone)
+# 分割面板系统 (SplitPanel Standalone)
 
-一个基于Qt6的独立停靠系统项目，提供纯分割式面板布局管理功能。
+一个基于Qt6的独立分割面板系统项目，提供纯分割式面板布局管理功能。
 
 ## ✨ 架构特性
 
@@ -33,7 +33,7 @@
 ## 项目结构
 
 ```text
-PVI/
+SHtest/
 ├── CMakeLists.txt              # 主CMake配置文件
 ├── README.md                   # 本文档
 ├── build/                      # 构建输出目录
@@ -46,23 +46,18 @@ PVI/
 ├── src/                        # C++源代码
 │   ├── main.cpp               # 程序入口
 │   ├── utils/                 # 工具类
-│   │   ├── Logger.hpp/cpp            # 日志系统
-│   │   ├── PerformanceMonitor.hpp    # 性能监控
-│   │   └── LayoutValidator.hpp       # 布局验证
+│   │   └── Logger.hpp/cpp            # 日志系统
 │   └── models/                # 数据模型
-│       ├── SplitPanelNod.hpp/cpp       # 节点基类（Panel、Container）
-│       ├── SplitManager.hpp/cpp    # 核心管理器
-│       ├── DockingTreeModel.hpp/cpp  # 树模型（备用）
-│       └── SplitNode.hpp/cpp         # 分割节点（备用）
-├── qml/                       # QML视图组件
+│       ├── SplitPanelNode.hpp/cpp    # 节点基类（Panel、Container）
+│       ├── SplitManager.hpp/cpp      # 核心管理器
+│       └── SplitTreeModel.hpp/cpp    # 树模型（备用）
+├── SplitPanel/                # QML视图组件
 │   ├── Main.qml                      # 主窗口
-│   ├── DockingSystemView.qml         # 停靠系统视图
-│   ├── NodeRenderer.qml              # 节点渲染路由器
-│   ├── PanelView.qml                 # 面板视图
-│   ├── ContainerView.qml             # 容器视图（分割）
-│   ├── DemoPanelContent.qml          # 演示内容
-│   └── qmldir                        # QML模块定义
-├── qml.qrc                     # QML资源文件
+│   ├── SplitSystemView.qml           # 分割系统视图
+│   ├── SplitNodeRenderer.qml         # 节点渲染路由器
+│   ├── SplitPanelView.qml            # 面板视图
+│   ├── SplitContainerView.qml        # 容器视图（分割）
+│   └── SplitPanelContent.qml         # 演示内容
 └── layout.json                 # 默认布局配置
 ```
 
@@ -72,7 +67,7 @@ PVI/
 
 ```bash
 git clone <repository-url>
-cd DockingSystemStandalone
+cd SHtest
 ```
 
 ### 2. 创建构建目录
@@ -103,7 +98,7 @@ cmake --build .
 ### 5. 运行
 
 ```bash
-./bin/DockingSystemStandalone
+./bin/SplitPanel
 ```
 
 ## 📚 代码学习
@@ -118,8 +113,8 @@ cmake --build .
 
 ### 学习建议
 1. **从main.cpp开始** - 了解应用启动流程和QML类型注册
-2. **学习DockingManager** - 理解核心管理逻辑
-3. **研究DockingNode** - 掌握节点树结构和智能指针使用
+2. **学习SplitManager** - 理解核心管理逻辑
+3. **研究SplitPanelNode** - 掌握节点树结构和智能指针使用
 4. **查看QML组件** - 理解界面渲染和用户交互
 5. **运行和调试** - 通过实际操作加深理解
 
@@ -155,11 +150,11 @@ cmake --build .
 #### 在QML中使用
 
 ```qml
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 Window {
     SplitManager {
-        id: SplitManager
+        id: splitManager
         minPanelSize: 150
         
         Component.onCompleted: {
@@ -168,9 +163,9 @@ Window {
         }
     }
 
-    DockingSystemView {
+    SplitSystemView {
         anchors.fill: parent
-        SplitManager: SplitManager
+        splitManager: splitManager
     }
 }
 ```
@@ -179,12 +174,12 @@ Window {
 
 ```qml
 // direction: Left=1, Right=2, Top=3, Bottom=4
-SplitManager.addPanelAt(
+splitManager.addPanelAt(
     "newPanel",           // panelId
     "新面板",             // title
     "qrc:/Panel.qml",    // qmlSource
     "targetPanelId",     // 目标面板ID
-    SplitManager.Right // 方向：右侧
+    SplitPanelNode.Right // 方向：右侧
 )
 ```
 
@@ -192,11 +187,11 @@ SplitManager.addPanelAt(
 
 ```qml
 // 保存布局到文件
-var path = SplitManager.getDefaultLayoutPath()
-SplitManager.saveLayoutToFile(path)
+var path = splitManager.getDefaultLayoutPath()
+splitManager.saveLayoutToFile(path)
 
 // 从文件加载布局
-SplitManager.loadLayoutFromFile(path)
+splitManager.loadLayoutFromFile(path)
 ```
 
 ## 核心类说明
@@ -222,7 +217,7 @@ SplitManager.loadLayoutFromFile(path)
 - `clear()` - 清空布局
 - `dumpTree()` - 输出树结构（调试用）
 
-### SplitPanelNod
+### SplitPanelNode
 
 节点基类，使用智能指针管理子节点。
 
@@ -264,13 +259,13 @@ SplitManager.loadLayoutFromFile(path)
 ┌─────────────────────────────────────────────────────────┐
 │                    QML层 (视图)                          │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐       │
-│  │  Main.qml  │→│DockingSystem│→│NodeRenderer│        │
-│  │  (主窗口)  │  │   View      │  │  (路由器) │        │
+│  │  Main.qml  │→│SplitSystem │→│SplitNode   │        │
+│  │  (主窗口)  │  │   View      │  │Renderer    │        │
 │  └────────────┘  └────────────┘  └────────────┘        │
 │                         ↓                ↓               │
 │                  ┌──────────┐    ┌──────────┐          │
-│                  │PanelView │    │Container │          │
-│                  │ (面板)   │    │View(容器)│          │
+│                  │SplitPanel│    │SplitCont-│          │
+│                  │View(面板)│    │ainerView │          │
 │                  └──────────┘    └──────────┘          │
 └─────────────────────────────────────────────────────────┘
                          ↕ (属性绑定 & 信号槽)
@@ -278,14 +273,14 @@ SplitManager.loadLayoutFromFile(path)
 │                   C++层 (数据模型)                       │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │         SplitManager (核心管理器)             │   │
-│  │  • 管理节点树 (m_root: unique_ptr<SplitPanelNod>)│   │
+│  │  • 管理节点树 (m_root: unique_ptr<SplitPanelNode>)│   │
 │  │  • 面板映射表 (m_panels: QHash)                │   │
 │  │  • 添加/删除/查找面板                           │   │
 │  │  • 布局序列化/反序列化                          │   │
 │  └─────────────────────────────────────────────────┘   │
 │                         ↓ 拥有                           │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │           SplitPanelNod (节点基类)                │   │
+│  │           SplitPanelNode (节点基类)            │   │
 │  │  ├─ PanelNode (面板节点)                       │   │
 │  │  └─ ContainerNode (容器节点)                   │   │
 │  │       • firstChild, secondChild (unique_ptr)   │   │
@@ -347,10 +342,10 @@ Rectangle {
 }
 ```
 
-然后在DockingManager中加载：
+然后在SplitManager中加载：
 
 ```qml
-SplitManager.addPanel(
+splitManager.addPanel(
     "custom1",
     "自定义面板",
     "qrc:/MyCustomPanel.qml"
@@ -467,6 +462,6 @@ cmake -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x/gcc_64 ..
 
 ---
 
-**享受使用停靠系统！** 🚀
+**享受使用分割面板系统！** 🚀
 
 项目版本：v1.0.0 | Qt 6.2+ | C++17
