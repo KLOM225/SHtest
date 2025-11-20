@@ -1,5 +1,5 @@
-#ifndef DOCKING_TREE_MODEL_HPP
-#define DOCKING_TREE_MODEL_HPP
+#ifndef SPLIT_TREE_MODEL_HPP
+#define SPLIT_TREE_MODEL_HPP
 
 #include <QAbstractItemModel>
 #include <QtQml/qqmlregistration.h>
@@ -17,7 +17,7 @@
  * 3. 信号自动通知视图更新
  * 4. 易于测试和调试
  */
-class DockingTreeModel : public QAbstractItemModel
+class SplitTreeModel : public QAbstractItemModel
 {
     Q_OBJECT
     QML_ELEMENT
@@ -74,8 +74,8 @@ public:
     };
     Q_ENUM(DataRole)
     
-    explicit DockingTreeModel(QObject* parent = nullptr);
-    ~DockingTreeModel() override = default;
+    explicit SplitTreeModel(QObject* parent = nullptr);
+    ~SplitTreeModel() override = default;
     
     // ========================================
     // QAbstractItemModel 接口实现

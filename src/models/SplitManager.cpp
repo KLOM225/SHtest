@@ -1,4 +1,4 @@
-#include "DockingManager.hpp"
+#include "SplitManager.hpp"
 #include "../utils/Logger.hpp"
 #include <QDebug>
 #include <QFile>
@@ -10,17 +10,17 @@
 #include <QCoreApplication>  // 用于获取应用程序目录路径
 #include <QSettings>          // 用于读取INI配置文件
 
-DockingManager::DockingManager(QObject* parent)
+SplitManager::SplitManager(QObject* parent)
     : QObject(parent)
 {
-    LOG_INFO("DockingManager", "Manager initialized");
+    LOG_INFO("SplitManager", "Manager initialized");
 }
 
 // ============================================================================
 // 核心 API 实现
 // ============================================================================
 
-PanelNode* DockingManager::createPanel(const QString& title, const QString& qmlSource)
+PanelNode* SplitManager::createPanel(const QString& title, const QString& qmlSource)
 {
     QString id = generateNodeId();
     auto panel = new PanelNode(id, title, this);
@@ -28,7 +28,7 @@ PanelNode* DockingManager::createPanel(const QString& title, const QString& qmlS
     return panel;
 }
 
-bool DockingManager::addPanel(const QString& panelId, const QString& title, const QString& qmlSource)
+bool SplitManager::addPanel(const QString& panelId, const QString& title, const QString& qmlSource)
 {
     // 【原子操作1】创建面板节点
     auto panel = createPanelNode(panelId, title, qmlSource);
@@ -38,15 +38,15 @@ bool DockingManager::addPanel(const QString& panelId, const QString& title, cons
         registerPanel(panelId, panel.get());
         setAsRoot(std::move(panel));
         
-        LOG_INFO("DockingManager", "Panel set as root");
+        LOG_INFO("SplitManager", "Panel set as root");
         emitPanelAddedSignals(panelId);
         return true;
     }
     
     // 【原子操作2】查找最右侧面板
-    DockingNode* rightmost = findRightmostPanel(m_root.get());
+    SplitPanelNode* rightmost = findRightmostPanel(m_root.get());
     if (!rightmost) {
-        LOG_ERROR("DockingManager", "Failed to find rightmost panel");
+        LOG_ERROR("SplitManager", "Failed to find rightmost panel");
         return false;
     }
     
@@ -62,13 +62,13 @@ bool DockingManager::addPanel(const QString& panelId, const QString& title, cons
     return success;
 }
 
-bool DockingManager::addPanelAt(const QString& panelId, const QString& title, const QString& qmlSource,
+bool SplitManager::addPanelAt(const QString& panelId, const QString& title, const QString& qmlSource,
                                   const QString& targetId, int direction)
 {
     // 【原子操作1】查找目标节点
-    DockingNode* target = findNode(m_root.get(), targetId);
+    SplitPanelNode* target = findNode(m_root.get(), targetId);
     if (!target) {
-        LOG_ERROR("DockingManager", QString("Target panel not found: %1").arg(targetId));
+        LOG_ERROR("SplitManager", QString("Target panel not found: %1").arg(targetId));
         return false;
     }
     
@@ -87,28 +87,28 @@ bool DockingManager::addPanelAt(const QString& panelId, const QString& title, co
     return success;
 }
 
-bool DockingManager::removePanel(const QString& panelId)
+bool SplitManager::removePanel(const QString& panelId)
 {
     // 【原子操作1】重入保护检查
     static QString currentlyRemoving;
     if (currentlyRemoving == panelId) {
-        LOG_DEBUG("DockingManager", QString("Panel removal already in progress, ignoring: %1").arg(panelId));
+        LOG_DEBUG("SplitManager", QString("Panel removal already in progress, ignoring: %1").arg(panelId));
         return false;
     }
     currentlyRemoving = panelId;
     
-    LOG_DEBUG("DockingManager", QString("Starting panel removal: %1").arg(panelId));
+    LOG_DEBUG("SplitManager", QString("Starting panel removal: %1").arg(panelId));
     
     // 【原子操作2】查找并验证面板
     PanelNode* panel = m_panels.value(panelId, nullptr);
     if (!panel) {
         currentlyRemoving.clear();
-        LOG_ERROR("DockingManager", QString("Panel not found: %1").arg(panelId));
+        LOG_ERROR("SplitManager", QString("Panel not found: %1").arg(panelId));
         return false;
     }
     
-    LOG_DEBUG("DockingManager", QString("Panel title: %1").arg(panel->title()));
-    LOG_DEBUG("DockingManager", QString("Current panel count: %1").arg(m_panels.size()));
+    LOG_DEBUG("SplitManager", QString("Panel title: %1").arg(panel->title()));
+    LOG_DEBUG("SplitManager", QString("Current panel count: %1").arg(m_panels.size()));
     
     // 【原子操作3】从面板映射中注销
     unregisterPanel(panelId);
@@ -125,7 +125,7 @@ bool DockingManager::removePanel(const QString& panelId)
     auto* parentContainer = getParentContainer(panel);
     if (!parentContainer) {
         currentlyRemoving.clear();
-        LOG_ERROR("DockingManager", "Panel has no valid parent container");
+        LOG_ERROR("SplitManager", "Panel has no valid parent container");
         return false;
     }
     
@@ -133,18 +133,18 @@ bool DockingManager::removePanel(const QString& panelId)
     auto [sibling, isFirst] = takeSiblingNode(parentContainer, panel);
     if (!sibling && parentContainer->firstChild() != panel && parentContainer->secondChild() != panel) {
         currentlyRemoving.clear();
-        LOG_ERROR("DockingManager", "Panel is not a child of its parent container");
+        LOG_ERROR("SplitManager", "Panel is not a child of its parent container");
         return false;
     }
     
-    LOG_DEBUG("DockingManager", QString("Panel is %1 child, sibling %2")
+    LOG_DEBUG("SplitManager", QString("Panel is %1 child, sibling %2")
         .arg(isFirst ? "first" : "second")
         .arg(sibling ? "found" : "is null"));
     
     // 【原子操作6】提升兄弟节点到父容器位置
     if (!promoteSiblingNode(parentContainer, std::move(sibling))) {
         currentlyRemoving.clear();
-        LOG_ERROR("DockingManager", "Failed to promote sibling node");
+        LOG_ERROR("SplitManager", "Failed to promote sibling node");
         return false;
     }
     
@@ -156,15 +156,15 @@ bool DockingManager::removePanel(const QString& panelId)
     return true;
 }
 
-PanelNode* DockingManager::findPanel(const QString& panelId)
+PanelNode* SplitManager::findPanel(const QString& panelId)
 {
     return m_panels.value(panelId, nullptr);
 }
 
-bool DockingManager::updateSplitRatio(const QString& containerId, double ratio)
+bool SplitManager::updateSplitRatio(const QString& containerId, double ratio)
 {
-    DockingNode* node = findNode(m_root.get(), containerId);
-    if (!node || node->nodeType() != DockingNode::Container) {
+    SplitPanelNode* node = findNode(m_root.get(), containerId);
+    if (!node || node->nodeType() != SplitPanelNode::Container) {
         return false;
     }
     
@@ -177,7 +177,7 @@ bool DockingManager::updateSplitRatio(const QString& containerId, double ratio)
     return false;
 }
 
-void DockingManager::clear()
+void SplitManager::clear()
 {
     m_root.reset();
     m_panels.clear();
@@ -191,7 +191,7 @@ void DockingManager::clear()
 // 布局序列化
 // ============================================================================
 
-QVariantMap DockingManager::saveLayout() const
+QVariantMap SplitManager::saveLayout() const
 {
     QVariantMap layout;
     layout["version"] = "2.0";
@@ -204,10 +204,10 @@ QVariantMap DockingManager::saveLayout() const
     return layout;
 }
 
-bool DockingManager::loadLayout(const QVariantMap& layout)
+bool SplitManager::loadLayout(const QVariantMap& layout)
 {
     if (layout.value("version").toString() != "2.0") {
-        LOG_WARNING("DockingManager", "Incompatible layout version");
+        LOG_WARNING("SplitManager", "Incompatible layout version");
         return false;
     }
     
@@ -228,30 +228,30 @@ bool DockingManager::loadLayout(const QVariantMap& layout)
     return true;
 }
 
-bool DockingManager::saveLayoutToFile(const QString& filePath) const
+bool SplitManager::saveLayoutToFile(const QString& filePath) const
 {
     QVariantMap layout = saveLayout();
     QJsonDocument doc = QJsonDocument::fromVariant(layout);
     
     if (writeJsonToFile(filePath, doc)) {
-        LOG_INFO("DockingManager", "Layout saved to file", {
+        LOG_INFO("SplitManager", "Layout saved to file", {
             {"path", filePath},
             {"panelCount", QString::number(m_panels.size())}
         });
         return true;
     }
     
-    LOG_ERROR("DockingManager", "Failed to write layout to file", {{"path", filePath}});
+    LOG_ERROR("SplitManager", "Failed to write layout to file", {{"path", filePath}});
     return false;
 }
 
-bool DockingManager::loadLayoutFromFile(const QString& filePath)
+bool SplitManager::loadLayoutFromFile(const QString& filePath)
 {
     QJsonDocument doc;
     QString errorMsg;
     
     if (!readJsonFromFile(filePath, doc, &errorMsg)) {
-        LOG_ERROR("DockingManager", "Failed to read layout file", {
+        LOG_ERROR("SplitManager", "Failed to read layout file", {
             {"path", filePath},
             {"error", errorMsg}
         });
@@ -262,18 +262,18 @@ bool DockingManager::loadLayoutFromFile(const QString& filePath)
     bool success = loadLayout(layout);
     
     if (success) {
-        LOG_INFO("DockingManager", "Layout loaded from file", {
+        LOG_INFO("SplitManager", "Layout loaded from file", {
             {"path", filePath},
             {"panelCount", QString::number(m_panels.size())}
         });
     } else {
-        LOG_ERROR("DockingManager", "Failed to load layout from file", {{"path", filePath}});
+        LOG_ERROR("SplitManager", "Failed to load layout from file", {{"path", filePath}});
     }
     
     return success;
 }
 
-QString DockingManager::getDefaultLayoutPath() const
+QString SplitManager::getDefaultLayoutPath() const
 {
     QString appDirPath = QCoreApplication::applicationDirPath();
     QString projectRoot = findProjectRoot(appDirPath);
@@ -286,7 +286,7 @@ QString DockingManager::getDefaultLayoutPath() const
 // 调试工具
 // ============================================================================
 
-QString DockingManager::dumpTree() const
+QString SplitManager::dumpTree() const
 {
     if (!m_root) {
         return "Empty tree";
@@ -294,7 +294,7 @@ QString DockingManager::dumpTree() const
     return dumpNode(m_root.get(), 0);
 }
 
-QVariantList DockingManager::getFlatPanelList() const
+QVariantList SplitManager::getFlatPanelList() const
 {
     QVariantList result;
     collectPanels(m_root.get(), result);
@@ -305,12 +305,12 @@ QVariantList DockingManager::getFlatPanelList() const
 // 内部辅助方法
 // ============================================================================
 
-DockingNode* DockingManager::findNode(DockingNode* node, const QString& id)
+SplitPanelNode* SplitManager::findNode(SplitPanelNode* node, const QString& id)
 {
     if (!node) return nullptr;
     if (node->nodeId() == id) return node;
     
-    if (node->nodeType() == DockingNode::Container) {
+    if (node->nodeType() == SplitPanelNode::Container) {
         auto* container = qobject_cast<ContainerNode*>(node);
         if (auto* found = findNode(container->firstChild(), id)) {
             return found;
@@ -323,11 +323,11 @@ DockingNode* DockingManager::findNode(DockingNode* node, const QString& id)
     return nullptr;
 }
 
-DockingNode* DockingManager::findRightmostPanel(DockingNode* node)
+SplitPanelNode* SplitManager::findRightmostPanel(SplitPanelNode* node)
 {
     if (!node) return nullptr;
     
-    if (node->nodeType() == DockingNode::Panel) {
+    if (node->nodeType() == SplitPanelNode::Panel) {
         return node;
     }
     
@@ -342,7 +342,7 @@ DockingNode* DockingManager::findRightmostPanel(DockingNode* node)
     return nullptr;
 }
 
-bool DockingManager::insertPanelAt(std::unique_ptr<DockingNode> panel, DockingNode* target, Direction dir)
+bool SplitManager::insertPanelAt(std::unique_ptr<SplitPanelNode> panel, SplitPanelNode* target, Direction dir)
 {
     if (!target || !panel) return false;
     
@@ -399,7 +399,7 @@ bool DockingManager::insertPanelAt(std::unique_ptr<DockingNode> panel, DockingNo
     auto newContainer = std::make_unique<ContainerNode>(generateNodeId(), orientation, this);
     
     // 从父容器取出目标节点
-    std::unique_ptr<DockingNode> targetNode;
+    std::unique_ptr<SplitPanelNode> targetNode;
     if (parentContainer->firstChild() == target) {
         targetNode = parentContainer->takeFirstChild();
     } else if (parentContainer->secondChild() == target) {
@@ -428,7 +428,7 @@ bool DockingManager::insertPanelAt(std::unique_ptr<DockingNode> panel, DockingNo
 }
 
 
-std::unique_ptr<DockingNode> DockingManager::loadNodeFromVariant(const QVariantMap& data)
+std::unique_ptr<SplitPanelNode> SplitManager::loadNodeFromVariant(const QVariantMap& data)
 {
     QString type = data["type"].toString();
     QString id = data["id"].toString();
@@ -464,16 +464,16 @@ std::unique_ptr<DockingNode> DockingManager::loadNodeFromVariant(const QVariantM
     return nullptr;
 }
 
-QString DockingManager::generateNodeId()
+QString SplitManager::generateNodeId()
 {
     return QString("node_%1").arg(++m_nodeIdCounter);
 }
 
-int DockingManager::countPanels(DockingNode* node) const
+int SplitManager::countPanels(SplitPanelNode* node) const
 {
     if (!node) return 0;
     
-    if (node->nodeType() == DockingNode::Panel) {
+    if (node->nodeType() == SplitPanelNode::Panel) {
         return 1;
     }
     
@@ -481,14 +481,14 @@ int DockingManager::countPanels(DockingNode* node) const
     return countPanels(container->firstChild()) + countPanels(container->secondChild());
 }
 
-QString DockingManager::dumpNode(DockingNode* node, int indent) const
+QString SplitManager::dumpNode(SplitPanelNode* node, int indent) const
 {
     if (!node) return "";
     
     QString indentStr = QString(indent * 2, ' ');
     QString result;
     
-    if (node->nodeType() == DockingNode::Panel) {
+    if (node->nodeType() == SplitPanelNode::Panel) {
         auto* panel = qobject_cast<PanelNode*>(node);
         result = QString("%1Panel[%2]: %3\n")
             .arg(indentStr)
@@ -510,11 +510,11 @@ QString DockingManager::dumpNode(DockingNode* node, int indent) const
     return result;
 }
 
-void DockingManager::collectPanels(DockingNode* node, QVariantList& panels) const
+void SplitManager::collectPanels(SplitPanelNode* node, QVariantList& panels) const
 {
     if (!node) return;
     
-    if (node->nodeType() == DockingNode::Panel) {
+    if (node->nodeType() == SplitPanelNode::Panel) {
         panels.append(QVariant::fromValue(qobject_cast<PanelNode*>(node)));
     } else {
         auto* container = qobject_cast<ContainerNode*>(node);
@@ -523,17 +523,17 @@ void DockingManager::collectPanels(DockingNode* node, QVariantList& panels) cons
     }
 }
 
-void DockingManager::processDelayedDeletion()
+void SplitManager::processDelayedDeletion()
 {
     // 延迟删除机制已移除，此方法保留以兼容现有代码
-    LOG_DEBUG("DockingManager", "processDelayedDeletion called but no longer used");
+    LOG_DEBUG("SplitManager", "processDelayedDeletion called but no longer used");
 }
 
 // ============================================================================
 // 通用辅助函数实现
 // ============================================================================
 
-std::unique_ptr<PanelNode> DockingManager::createPanelNode(
+std::unique_ptr<PanelNode> SplitManager::createPanelNode(
     const QString& id,
     const QString& title,
     const QString& qmlSource)
@@ -544,19 +544,19 @@ std::unique_ptr<PanelNode> DockingManager::createPanelNode(
     return panel;
 }
 
-void DockingManager::registerPanel(const QString& panelId, PanelNode* panel)
+void SplitManager::registerPanel(const QString& panelId, PanelNode* panel)
 {
     // 将面板指针添加到哈希表，用于快速查找 O(1)
     m_panels[panelId] = panel;
 }
 
-void DockingManager::unregisterPanel(const QString& panelId)
+void SplitManager::unregisterPanel(const QString& panelId)
 {
     // 从哈希表中移除面板指针（不影响实际节点的生命周期）
     m_panels.remove(panelId);
 }
 
-void DockingManager::setAsRoot(std::unique_ptr<DockingNode> node)
+void SplitManager::setAsRoot(std::unique_ptr<SplitPanelNode> node)
 {
     // 设置新的根节点，旧根节点自动释放（智能指针）
     m_root = std::move(node);
@@ -564,7 +564,7 @@ void DockingManager::setAsRoot(std::unique_ptr<DockingNode> node)
     emit rootNodeChanged();
 }
 
-void DockingManager::emitPanelAddedSignals(const QString& panelId)
+void SplitManager::emitPanelAddedSignals(const QString& panelId)
 {
     // 统一发送面板添加相关的三个信号
     emit panelCountChanged();  // 更新面板计数
@@ -572,7 +572,7 @@ void DockingManager::emitPanelAddedSignals(const QString& panelId)
     emit layoutChanged();      // 通知布局已改变
 }
 
-void DockingManager::emitPanelRemovedSignals(const QString& panelId)
+void SplitManager::emitPanelRemovedSignals(const QString& panelId)
 {
     // 【重要】立即发送信号，不使用延迟机制
     // 原因：QTimer::singleShot 会延迟发送信号到事件循环的下一轮
@@ -584,9 +584,9 @@ void DockingManager::emitPanelRemovedSignals(const QString& panelId)
     emit layoutChanged();
 }
 
-std::pair<std::unique_ptr<DockingNode>, bool> DockingManager::takeSiblingNode(
+std::pair<std::unique_ptr<SplitPanelNode>, bool> SplitManager::takeSiblingNode(
     ContainerNode* parent,
-    DockingNode* targetChild)
+    SplitPanelNode* targetChild)
 {
     if (!parent || !targetChild) {
         return {nullptr, false};
@@ -607,10 +607,10 @@ std::pair<std::unique_ptr<DockingNode>, bool> DockingManager::takeSiblingNode(
     return {nullptr, false};
 }
 
-bool DockingManager::replaceChildInContainer(
+bool SplitManager::replaceChildInContainer(
     ContainerNode* container,
-    DockingNode* oldChild,
-    std::unique_ptr<DockingNode> newChild)
+    SplitPanelNode* oldChild,
+    std::unique_ptr<SplitPanelNode> newChild)
 {
     if (!container || !oldChild) {
         return false;
@@ -636,7 +636,7 @@ bool DockingManager::replaceChildInContainer(
     return false;
 }
 
-ContainerNode* DockingManager::getParentContainer(DockingNode* node)
+ContainerNode* SplitManager::getParentContainer(SplitPanelNode* node)
 {
     if (!node) return nullptr;
     // 获取 Qt 父对象，并尝试转换为 ContainerNode
@@ -644,9 +644,9 @@ ContainerNode* DockingManager::getParentContainer(DockingNode* node)
     return qobject_cast<ContainerNode*>(node->parent());
 }
 
-bool DockingManager::promoteSiblingNode(
+bool SplitManager::promoteSiblingNode(
     ContainerNode* parentContainer,
-    std::unique_ptr<DockingNode> sibling)
+    std::unique_ptr<SplitPanelNode> sibling)
 {
     if (!parentContainer) return false;
     
@@ -661,11 +661,11 @@ bool DockingManager::promoteSiblingNode(
             
             // 兄弟节点提升为新根节点
             m_root = std::move(sibling);
-            LOG_DEBUG("DockingManager", "Parent is root, replacing root with sibling");
+            LOG_DEBUG("SplitManager", "Parent is root, replacing root with sibling");
         } else {
             // 没有兄弟节点，树变为空
             m_root.reset();
-            LOG_DEBUG("DockingManager", "Parent is root, no sibling, clearing root");
+            LOG_DEBUG("SplitManager", "Parent is root, no sibling, clearing root");
         }
         return true;
     }
@@ -675,35 +675,35 @@ bool DockingManager::promoteSiblingNode(
     // 删除后树结构：grandParent -> sibling
     auto* grandParent = getParentContainer(parentContainer);
     if (!grandParent) {
-        LOG_ERROR("DockingManager", "Parent container has no grandparent");
+        LOG_ERROR("SplitManager", "Parent container has no grandparent");
         return false;
     }
     
     // 在祖父容器中用兄弟节点替换父容器
     if (replaceChildInContainer(grandParent, parentContainer, std::move(sibling))) {
-        LOG_DEBUG("DockingManager", "Replaced parent container with sibling in grandparent");
+        LOG_DEBUG("SplitManager", "Replaced parent container with sibling in grandparent");
         return true;
     }
     
     return false;
 }
 
-void DockingManager::finalizePanelRemoval(const QString& panelId)
+void SplitManager::finalizePanelRemoval(const QString& panelId)
 {
     // 【重要】先发送信号通知QML更新，确保树结构变更立即同步到QML层
     // 这样QML可以在日志输出前就看到最新的树结构，避免延迟导致的不一致
     emitPanelRemovedSignals(panelId);
     
     // 记录删除成功日志（在信号发送后记录，此时QML已完成更新）
-    LOG_INFO("DockingManager", QString("Panel removed successfully: %1").arg(panelId));
-    LOG_DEBUG("DockingManager", QString("New panel count: %1").arg(m_panels.size()));
+    LOG_INFO("SplitManager", QString("Panel removed successfully: %1").arg(panelId));
+    LOG_DEBUG("SplitManager", QString("New panel count: %1").arg(m_panels.size()));
 }
 
 // ============================================================================
 // 静态辅助方法实现
 // ============================================================================
 
-bool DockingManager::writeJsonToFile(const QString& filePath, const QJsonDocument& jsonDoc)
+bool SplitManager::writeJsonToFile(const QString& filePath, const QJsonDocument& jsonDoc)
 {
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -715,7 +715,7 @@ bool DockingManager::writeJsonToFile(const QString& filePath, const QJsonDocumen
     return bytesWritten > 0;
 }
 
-bool DockingManager::readJsonFromFile(const QString& filePath, QJsonDocument& outDoc, QString* errorMsg)
+bool SplitManager::readJsonFromFile(const QString& filePath, QJsonDocument& outDoc, QString* errorMsg)
 {
     QFile file(filePath);
     if (!file.exists()) {
@@ -747,7 +747,7 @@ bool DockingManager::readJsonFromFile(const QString& filePath, QJsonDocument& ou
     return true;
 }
 
-bool DockingManager::ensureDirectoryExists(const QString& dirPath)
+bool SplitManager::ensureDirectoryExists(const QString& dirPath)
 {
     QDir dir;
     if (!dir.exists(dirPath)) {
@@ -756,7 +756,7 @@ bool DockingManager::ensureDirectoryExists(const QString& dirPath)
     return true;
 }
 
-QString DockingManager::findProjectRoot(const QString& startPath, const QString& marker, int maxLevels)
+QString SplitManager::findProjectRoot(const QString& startPath, const QString& marker, int maxLevels)
 {
     QDir searchDir(startPath);
     for (int i = 0; i < maxLevels; ++i) {

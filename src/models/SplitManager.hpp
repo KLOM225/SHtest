@@ -1,5 +1,5 @@
-#ifndef DOCKING_MANAGER_HPP
-#define DOCKING_MANAGER_HPP
+#ifndef SPLIT_MANAGER_HPP
+#define SPLIT_MANAGER_HPP
 
 #include <QObject>
 #include <QString>
@@ -10,11 +10,11 @@
 #include <QDir>
 #include <QJsonDocument>
 #include <memory>
-#include "DockingNode.hpp"
+#include "SplitPanelNode.hpp"
 
 /**
  * ============================================================================
- * DockingManager - 停靠系统核心管理器
+ * SplitManager - 停靠系统核心管理器
  * ============================================================================
  * 
  * 作用：
@@ -23,7 +23,7 @@
  *   处理布局的保存和加载
  * 
  * 核心职责：
- *   1. 树管理 - 维护 DockingNode 树结构
+ *   1. 树管理 - 维护 SplitPanelNode 树结构
  *   2. 面板操作 - 添加、删除、查找面板
  *   3. 布局序列化 - 保存/加载布局到 JSON 文件
  *   4. 信号通知 - 数据变化时通知 QML 更新界面
@@ -34,13 +34,13 @@
  *   - 更易维护：代码量减少 60%
  * 
  * QML 使用：
- *   DockingManager {
+ *   SplitManager {
  *       id: manager
  *       onRootNodeChanged: { 界面自动更新 }
  *   }
  *   NodeRenderer { node: manager.rootNode }
  */
-class DockingManager : public QObject {
+class SplitManager : public QObject {
     Q_OBJECT
     QML_ELEMENT
     
@@ -51,7 +51,7 @@ class DockingManager : public QObject {
     // rootNode - 树的根节点
     // 只读：外部不能直接设置，只能通过 addPanel/removePanel 修改
     // QML 会监听 rootNodeChanged 信号自动更新界面
-    Q_PROPERTY(DockingNode* rootNode READ rootNode NOTIFY rootNodeChanged)
+    Q_PROPERTY(SplitPanelNode* rootNode READ rootNode NOTIFY rootNodeChanged)
     
     // panelCount - 当前面板总数
     // 只读：自动计算，不能手动设置
@@ -77,7 +77,7 @@ public:
      * Top/Bottom：在目标面板上方/下方添加
      * Center：替换目标面板（暂未使用）
      * 
-     * QML 使用：DockingManager.Left, DockingManager.Right 等
+     * QML 使用：DockingManager.Left, SplitManager.Right 等
      */
     enum Direction {
         Left = 1,
@@ -93,7 +93,7 @@ public:
      * 参数：parent - Qt 父对象
      * 初始化：创建空的停靠系统（m_root = nullptr）
      */
-    explicit DockingManager(QObject* parent = nullptr);
+    explicit SplitManager(QObject* parent = nullptr);
     
     // ========================================================================
     // 属性访问器
@@ -104,7 +104,7 @@ public:
      * 返回：树的根节点指针，如果树为空则返回 nullptr
      * 用途：QML 通过此属性访问整棵树
      */
-    DockingNode* rootNode() const { return m_root.get(); }
+    SplitPanelNode* rootNode() const { return m_root.get(); }
     
     /**
      * 获取面板总数
@@ -124,8 +124,8 @@ public:
      * 限制：自动约束在 50.0 到 1000.0 之间
      */
     void setMinPanelSize(double size) {
-        double validatedSize = DockingNodeHelpers::validateMinSize(size);
-        if (DockingNodeHelpers::safeSetValue(m_minPanelSize, validatedSize)) {
+        double validatedSize = SplitPanelNodeHelpers::validateMinSize(size);
+        if (SplitPanelNodeHelpers::safeSetValue(m_minPanelSize, validatedSize)) {
             emit minPanelSizeChanged();
         }
     }
@@ -193,7 +193,7 @@ public:
      *   4. 更新树结构
      *   5. 发送信号通知 QML
      * 
-     * QML 调用：dockingManager.addPanelAt("new", "标题", "qrc:/...", "target", DockingManager.Right)
+     * QML 调用：dockingManager.addPanelAt("new", "标题", "qrc:/...", "target", SplitManager.Right)
      */
     Q_INVOKABLE bool addPanelAt(const QString& panelId, const QString& title, const QString& qmlSource,
                                  const QString& targetId, int direction);
@@ -348,7 +348,7 @@ signals:
      * 根节点改变信号
      * 触发时机：树结构发生任何变化时（添加、删除、重组）
      * 重要性：★★★★★ QML 的核心更新机制依赖此信号
-     * QML 绑定：node: dockingManager.rootNode 会监听此信号
+     * QML 绑定：node: SplitManager.rootNode 会监听此信号
      */
     void rootNodeChanged();
     
@@ -407,7 +407,7 @@ private:
      *   2. 如果是容器，递归查找 firstChild
      *   3. 递归查找 secondChild
      */
-    DockingNode* findNode(DockingNode* node, const QString& id);
+    SplitPanelNode* findNode(SplitPanelNode* node, const QString& id);
     
     /**
      * 查找最右侧的面板
@@ -420,7 +420,7 @@ private:
      *   2. 如果是 Container，优先查找 secondChild
      *   3. 如果 secondChild 不存在，查找 firstChild
      */
-    DockingNode* findRightmostPanel(DockingNode* node);
+    SplitPanelNode* findRightmostPanel(SplitPanelNode* node);
     
     /**
      * 在目标节点旁插入面板（核心算法）
@@ -440,7 +440,7 @@ private:
      * 特殊情况：
      *   - 如果 target 是 root，直接替换 root
      */
-    bool insertPanelAt(std::unique_ptr<DockingNode> panel, DockingNode* target, Direction dir);
+    bool insertPanelAt(std::unique_ptr<SplitPanelNode> panel, SplitPanelNode* target, Direction dir);
     
     /**
      * 从 QVariantMap 加载节点（递归）
@@ -455,7 +455,7 @@ private:
      *      - 递归加载 first 和 second 子节点
      *   4. 返回创建的节点
      */
-    std::unique_ptr<DockingNode> loadNodeFromVariant(const QVariantMap& data);
+    std::unique_ptr<SplitPanelNode> loadNodeFromVariant(const QVariantMap& data);
     
     /**
      * 生成唯一节点 ID
@@ -469,7 +469,7 @@ private:
      * 参数：node - 起始节点
      * 返回：以该节点为根的子树中的面板数量
      */
-    int countPanels(DockingNode* node) const;
+    int countPanels(SplitPanelNode* node) const;
     
     /**
      * 递归生成树的文本表示（用于调试）
@@ -478,7 +478,7 @@ private:
      *   indent - 缩进层级
      * 返回：带缩进的树结构字符串
      */
-    QString dumpNode(DockingNode* node, int indent = 0) const;
+    QString dumpNode(SplitPanelNode* node, int indent = 0) const;
     
     /**
      * 递归收集所有面板（扁平化）
@@ -487,7 +487,7 @@ private:
      *   panels - 输出列表（引用传递）
      * 用途：getFlatPanelList() 调用
      */
-    void collectPanels(DockingNode* node, QVariantList& panels) const;
+    void collectPanels(SplitPanelNode* node, QVariantList& panels) const;
     
     // ========================================================================
     // 通用辅助函数（代码复用）
@@ -528,7 +528,7 @@ private:
      * 作用：将节点设为树的根节点
      * 参数：node - 节点智能指针
      */
-    void setAsRoot(std::unique_ptr<DockingNode> node);
+    void setAsRoot(std::unique_ptr<SplitPanelNode> node);
     
     /**
      * 发送面板添加相关信号组（原子操作）
@@ -554,9 +554,9 @@ private:
      *   targetChild - 目标子节点
      * 返回：{兄弟节点, 是否为第一个子节点}
      */
-    std::pair<std::unique_ptr<DockingNode>, bool> takeSiblingNode(
+    std::pair<std::unique_ptr<SplitPanelNode>, bool> takeSiblingNode(
         ContainerNode* parent,
-        DockingNode* targetChild);
+        SplitPanelNode* targetChild);
     
     /**
      * 替换容器中的子节点
@@ -569,8 +569,8 @@ private:
      */
     bool replaceChildInContainer(
         ContainerNode* container,
-        DockingNode* oldChild,
-        std::unique_ptr<DockingNode> newChild);
+        SplitPanelNode* oldChild,
+        std::unique_ptr<SplitPanelNode> newChild);
     
     /**
      * 获取父容器
@@ -578,7 +578,7 @@ private:
      * 参数：node - 目标节点
      * 返回：父容器指针
      */
-    ContainerNode* getParentContainer(DockingNode* node);
+    ContainerNode* getParentContainer(SplitPanelNode* node);
     
     /**
      * 提升兄弟节点到父容器位置（原子操作）
@@ -593,7 +593,7 @@ private:
      */
     bool promoteSiblingNode(
         ContainerNode* parentContainer,
-        std::unique_ptr<DockingNode> sibling);
+        std::unique_ptr<SplitPanelNode> sibling);
     
     /**
      * 完成面板删除后的清理工作（原子操作）
@@ -626,7 +626,7 @@ private:
     // 成员变量
     // ========================================================================
     
-    std::unique_ptr<DockingNode> m_root;  // 树的根节点（所有权）
+    std::unique_ptr<SplitPanelNode> m_root;  // 树的根节点（所有权）
     QHash<QString, PanelNode*> m_panels;  // 面板快速查找表（ID → 指针）
     double m_minPanelSize = 150.0;        // 全局最小面板尺寸
     int m_nodeIdCounter = 0;              // 节点 ID 计数器（用于生成唯一 ID）

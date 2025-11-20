@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 // ============================================================================
-// DemoPanelContent.qml - 演示面板内容
+// SplitPanelContent.qml - 演示面板内容
 // ============================================================================
 // 
 // 功能：
@@ -110,83 +110,83 @@ Rectangle {
             onClicked: root.handleTestButton()
         }
     }
-}
-
-// ============================================================================
-// 可复用组件定义
-// ============================================================================
-
-// 面板信息卡片组件
-component PanelInfoCard: Rectangle {
-    Layout.preferredHeight: idColumn.height + 16
-    color: "#F0F0F0"
-    radius: 6
-    border.color: "#D0D0D0"
-    border.width: 1
     
-    ColumnLayout {
-        id: idColumn
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: 12
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 6
+    // ========================================================================
+    // 可复用组件定义
+    // ========================================================================
+    
+    // 面板信息卡片组件
+    component PanelInfoCard: Rectangle {
+        Layout.preferredHeight: idColumn.height + 16
+        color: "#F0F0F0"
+        radius: 6
+        border.color: "#D0D0D0"
+        border.width: 1
         
-        InfoRow {
-            icon: "📌 ID:"
-            value: root.getPanelId()
-            valueColor: "#1976D2"
-            iconColor: "#2196F3"
-        }
-        
-        InfoRow {
-            icon: "📝 标题:"
-            value: root.getPanelTitle()
-            valueColor: "#388E3C"
-            iconColor: "#4CAF50"
+        ColumnLayout {
+            id: idColumn
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.margins: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 6
+            
+            InfoRow {
+                icon: "📌 ID:"
+                value: root.getPanelId()
+                valueColor: "#1976D2"
+                iconColor: "#2196F3"
+            }
+            
+            InfoRow {
+                icon: "📝 标题:"
+                value: root.getPanelTitle()
+                valueColor: "#388E3C"
+                iconColor: "#4CAF50"
+            }
         }
     }
-}
-
-// 信息行组件
-component InfoRow: RowLayout {
-    property string icon: ""
-    property string value: ""
-    property string iconColor: "#000000"
-    property string valueColor: "#000000"
     
-    Layout.fillWidth: true
-    spacing: 8
-    
-    Text {
-        text: icon
-        font.pixelSize: 11
-        font.bold: true
-        color: iconColor
-    }
-    
-    Text {
-        text: value
-        font.pixelSize: 11
-        font.family: "Consolas, Courier New, monospace"
-        color: valueColor
+    // 信息行组件
+    component InfoRow: RowLayout {
+        property string icon: ""
+        property string value: ""
+        property string iconColor: "#000000"
+        property string valueColor: "#000000"
+        
         Layout.fillWidth: true
-        elide: Text.ElideMiddle
+        spacing: 8
+        
+        Text {
+            text: icon
+            font.pixelSize: 11
+            font.bold: true
+            color: iconColor
+        }
+        
+        Text {
+            text: value
+            font.pixelSize: 11
+            font.family: "Consolas, Courier New, monospace"
+            color: valueColor
+            Layout.fillWidth: true
+            elide: Text.ElideMiddle
+        }
     }
-}
-
-// 列表项组件
-component ListItem: Rectangle {
-    property int itemIndex: 0
     
-    height: 40
-    color: itemIndex % 2 === 0 ? "#F5F5F5" : "#FAFAFA"
-    radius: 4
-    
-    Text {
-        anchors.centerIn: parent
-        text: "项目 " + (itemIndex + 1)
-        font.pixelSize: 14
-        color: "#666666"
+    // 列表项组件
+    component ListItem: Rectangle {
+        property int itemIndex: 0
+        
+        height: 40
+        color: itemIndex % 2 === 0 ? "#F5F5F5" : "#FAFAFA"
+        radius: 4
+        
+        Text {
+            anchors.centerIn: parent
+            text: "项目 " + (itemIndex + 1)
+            font.pixelSize: 14
+            color: "#666666"
+        }
     }
 }

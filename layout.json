@@ -2,65 +2,37 @@
     "minPanelSize": 150,
     "root": {
         "first": {
+            "id": "welcome_panel",
+            "minSize": 150,
+            "qmlSource": "SplitPanelContent.qml",
+            "title": "欢迎面板",
+            "type": "panel"
+        },
+        "id": "node_5",
+        "minSize": 150,
+        "orientation": "vertical",
+        "second": {
             "first": {
-                "id": "welcome_panel",
+                "id": "panel_1763645657493",
                 "minSize": 150,
-                "qmlSource": "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
-                "title": "欢迎面板",
+                "qmlSource": "SplitPanelContent.qml",
+                "title": "新面板",
                 "type": "panel"
             },
-            "id": "node_2",
+            "id": "node_1",
             "minSize": 150,
-            "orientation": "horizontal",
+            "orientation": "vertical",
             "second": {
-                "first": {
-                    "id": "panel_1761457797105",
-                    "minSize": 150,
-                    "qmlSource": "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
-                    "title": "新面板",
-                    "type": "panel"
-                },
-                "id": "node_3",
+                "id": "panel_1763645675498",
                 "minSize": 150,
-                "orientation": "vertical",
-                "second": {
-                    "first": {
-                        "id": "panel_1761457798229",
-                        "minSize": 150,
-                        "qmlSource": "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
-                        "title": "新面板",
-                        "type": "panel"
-                    },
-                    "id": "node_4",
-                    "minSize": 150,
-                    "orientation": "vertical",
-                    "second": {
-                        "id": "panel_1761457798587",
-                        "minSize": 150,
-                        "qmlSource": "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
-                        "title": "新面板",
-                        "type": "panel"
-                    },
-                    "splitRatio": 0.5,
-                    "type": "container"
-                },
-                "splitRatio": 0.3361669242658424,
-                "type": "container"
+                "qmlSource": "SplitPanelContent.qml",
+                "title": "新面板",
+                "type": "panel"
             },
             "splitRatio": 0.5,
             "type": "container"
         },
-        "id": "node_1",
-        "minSize": 150,
-        "orientation": "vertical",
-        "second": {
-            "id": "panel_1761457795486",
-            "minSize": 150,
-            "qmlSource": "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
-            "title": "新面板",
-            "type": "panel"
-        },
-        "splitRatio": 0.7362499999999998,
+        "splitRatio": 0.26687500000000003,
         "type": "container"
     },
     "version": "2.0"

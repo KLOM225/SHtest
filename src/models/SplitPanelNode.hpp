@@ -1,5 +1,5 @@
-#ifndef DOCKING_NODE_HPP
-#define DOCKING_NODE_HPP
+#ifndef SPLIT_PANEL_NODE_HPP
+#define SPLIT_PANEL_NODE_HPP
 
 #include <QObject>
 #include <QString>
@@ -12,7 +12,7 @@
 // 内联辅助函数（原CommonHelpers中的函数）
 // ============================================================================
 
-namespace DockingNodeHelpers {
+namespace SplitPanelNodeHelpers {
 
 /**
  * @brief 安全的浮点数比较
@@ -77,10 +77,10 @@ inline double validateMinSize(double size) {
  * 3. 使用智能指针管理内存，自动清理
  * 4. 简化了代码，提高了性能
  */
-class DockingNode : public QObject {
+class SplitPanelNode : public QObject {
     Q_OBJECT
     QML_ELEMENT
-    QML_UNCREATABLE("DockingNode is abstract - use PanelNode or ContainerNode")
+    QML_UNCREATABLE("SplitPanelNod is abstract - use PanelNode or ContainerNode")
     
     Q_PROPERTY(NodeType nodeType READ nodeType CONSTANT)
     Q_PROPERTY(QString nodeId READ nodeId CONSTANT)
@@ -95,8 +95,8 @@ public:
     
     double minSize() const { return m_minSize; }
     void setMinSize(double size) {
-        double validatedSize = DockingNodeHelpers::validateMinSize(size);
-        if (DockingNodeHelpers::safeSetValue(m_minSize, validatedSize)) {
+        double validatedSize = SplitPanelNodeHelpers::validateMinSize(size);
+        if (SplitPanelNodeHelpers::safeSetValue(m_minSize, validatedSize)) {
             emit minSizeChanged();
         }
     }
@@ -104,13 +104,13 @@ public:
     virtual QVariantMap toVariant() const = 0;
     
     // 优化: 虚析构函数确保正确清理
-    virtual ~DockingNode() = default;
+    virtual ~SplitPanelNode() = default;
     
 signals:
     void minSizeChanged();
     
 protected:
-    explicit DockingNode(NodeType type, const QString& id, QObject* parent = nullptr)
+    explicit SplitPanelNode(NodeType type, const QString& id, QObject* parent = nullptr)
         : QObject(parent), m_type(type), m_id(id) {}
     
 private:
@@ -140,7 +140,7 @@ private:
  *     ├─ title: "欢迎面板"
  *     └─ qmlSource: "qrc:/qml/DemoPanelContent.qml"
  */
-class PanelNode : public DockingNode {
+class PanelNode : public SplitPanelNode {
     Q_OBJECT
     QML_ELEMENT
     
@@ -163,7 +163,7 @@ public:
      *   parent - Qt 父对象
      */
     explicit PanelNode(const QString& id, const QString& title = "Panel", QObject* parent = nullptr)
-        : DockingNode(NodeType::Panel, id, parent), m_title(title) {}
+        : SplitPanelNode(NodeType::Panel, id, parent), m_title(title) {}
     
     // ========================================================================
     // 属性访问器
@@ -171,14 +171,14 @@ public:
     
     QString title() const { return m_title; }
     void setTitle(const QString& title) {
-        if (DockingNodeHelpers::safeSetValue(m_title, title)) {
+        if (SplitPanelNodeHelpers::safeSetValue(m_title, title)) {
             emit titleChanged();
         }
     }
     
     QString qmlSource() const { return m_qmlSource; }
     void setQmlSource(const QString& source) {
-        if (DockingNodeHelpers::safeSetValue(m_qmlSource, source)) {
+        if (SplitPanelNodeHelpers::safeSetValue(m_qmlSource, source)) {
             emit qmlSourceChanged();
         }
     }
@@ -220,21 +220,21 @@ private:
 // ============================================================================
 // 容器节点 - 替代原来的 SplitContainerNode
 // ============================================================================
-class ContainerNode : public DockingNode {
+class ContainerNode : public SplitPanelNode {
     Q_OBJECT
     QML_ELEMENT
     
     Q_PROPERTY(Orientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     Q_PROPERTY(qreal splitRatio READ splitRatio WRITE setSplitRatio NOTIFY splitRatioChanged)
-    Q_PROPERTY(DockingNode* firstChild READ firstChild NOTIFY childrenChanged)
-    Q_PROPERTY(DockingNode* secondChild READ secondChild NOTIFY childrenChanged)
+    Q_PROPERTY(SplitPanelNode* firstChild READ firstChild NOTIFY childrenChanged)
+    Q_PROPERTY(SplitPanelNode* secondChild READ secondChild NOTIFY childrenChanged)
     
 public:
     enum Orientation { Horizontal, Vertical };
     Q_ENUM(Orientation)
     
     explicit ContainerNode(const QString& id, Orientation orient = Horizontal, QObject* parent = nullptr)
-        : DockingNode(NodeType::Container, id, parent), m_orientation(orient) {}
+        : SplitPanelNode(NodeType::Container, id, parent), m_orientation(orient) {}
     
     // 优化: 析构时清理子节点
     ~ContainerNode() override {
@@ -245,15 +245,15 @@ public:
     
     Orientation orientation() const { return m_orientation; }
     void setOrientation(Orientation orient) {
-        if (DockingNodeHelpers::safeSetValue(m_orientation, orient)) {
+        if (SplitPanelNodeHelpers::safeSetValue(m_orientation, orient)) {
             emit orientationChanged();
         }
     }
     
     qreal splitRatio() const { return m_splitRatio; }
     void setSplitRatio(qreal ratio) {
-        double validatedRatio = DockingNodeHelpers::validateSplitRatio(ratio);
-        if (DockingNodeHelpers::safeSetValue(m_splitRatio, validatedRatio)) {
+        double validatedRatio = SplitPanelNodeHelpers::validateSplitRatio(ratio);
+        if (SplitPanelNodeHelpers::safeSetValue(m_splitRatio, validatedRatio)) {
             emit splitRatioChanged();
         }
     }
@@ -267,13 +267,13 @@ public:
      * 返回：原始指针（QML 可以直接使用）
      * 用途：在 QML 中访问子节点（如 container.firstChild）
      */
-    DockingNode* firstChild() const { return m_firstChild.get(); }
+    SplitPanelNode* firstChild() const { return m_firstChild.get(); }
     
     /**
      * 获取第二个子节点
      * 返回：原始指针（QML 可以直接使用）
      */
-    DockingNode* secondChild() const { return m_secondChild.get(); }
+    SplitPanelNode* secondChild() const { return m_secondChild.get(); }
     
     // ========================================================================
     // 子节点管理（C++ 接口 - 使用智能指针）
@@ -287,12 +287,12 @@ public:
      * 重要：使用 std::move() 转移所有权
      * 示例：container->setFirstChild(std::move(panelNode))
      */
-    void setFirstChild(std::unique_ptr<DockingNode> child) {
+    void setFirstChild(std::unique_ptr<SplitPanelNode> child) {
         m_firstChild = std::move(child);  // 所有权转移
         if (m_firstChild) {
             m_firstChild->setParent(this);  // 设置 Qt 父对象（内存管理）
         }
-        // 立即发送信号，与 DockingManager::emitPanelRemovedSignals 保持同步
+        // 立即发送信号，与 SplitManager::emitPanelRemovedSignals 保持同步
         // 避免延迟导致 QML 绑定访问到不一致状态
         emit childrenChanged();
     }
@@ -301,12 +301,12 @@ public:
      * 设置第二个子节点
      * 参数：child - 智能指针（所有权转移）
      */
-    void setSecondChild(std::unique_ptr<DockingNode> child) {
+    void setSecondChild(std::unique_ptr<SplitPanelNode> child) {
         m_secondChild = std::move(child);
         if (m_secondChild) {
             m_secondChild->setParent(this);
         }
-        // 立即发送信号，与 DockingManager::emitPanelRemovedSignals 保持同步
+        // 立即发送信号，与 SplitManager::emitPanelRemovedSignals 保持同步
         emit childrenChanged();
     }
     
@@ -317,7 +317,7 @@ public:
      * 
      * 重要：调用后 m_firstChild 变为 nullptr
      */
-    std::unique_ptr<DockingNode> takeFirstChild() {
+    std::unique_ptr<SplitPanelNode> takeFirstChild() {
         auto child = std::move(m_firstChild);  // 所有权转出
         // 立即发送信号，确保在 removePanel 流程中子节点状态实时更新
         // 避免 QML 绑定访问到已被 take 的悬空指针
@@ -328,7 +328,7 @@ public:
     /**
      * 取出第二个子节点（移除并返回所有权）
      */
-    std::unique_ptr<DockingNode> takeSecondChild() {
+    std::unique_ptr<SplitPanelNode> takeSecondChild() {
         auto child = std::move(m_secondChild);
         // 立即发送信号，确保在 removePanel 流程中子节点状态实时更新
         emit childrenChanged();
@@ -351,7 +351,7 @@ public:
      * 参数：index - 0 或 1
      * 返回：对应的子节点指针，无效索引返回 nullptr
      */
-    DockingNode* child(int index) const {
+    SplitPanelNode* child(int index) const {
         if (index == 0) return m_firstChild.get();
         if (index == 1) return m_secondChild.get();
         return nullptr;
@@ -418,8 +418,8 @@ private:
     qreal m_splitRatio = 0.5;    // 分割比例（默认 50%）
     
     // 智能指针管理子节点（自动释放内存）
-    std::unique_ptr<DockingNode> m_firstChild;   // 第一个子节点
-    std::unique_ptr<DockingNode> m_secondChild;  // 第二个子节点
+    std::unique_ptr<SplitPanelNode> m_firstChild;   // 第一个子节点
+    std::unique_ptr<SplitPanelNode> m_secondChild;  // 第二个子节点
 };
 
 #endif // DOCKING_NODE_HPP

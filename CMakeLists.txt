@@ -1,11 +1,11 @@
 # ============================================================================
-# 现代化CMake配置 - DockingSystemStandalone
+# 现代化CMake配置 - SplitPanel
 # ============================================================================
 
 cmake_minimum_required(VERSION 3.21)
 
 # 项目定义
-project(DockingSystemStandalone 
+project(SplitPanel 
     VERSION 1.0.0
     DESCRIPTION "Qt6 QML Docking System Standalone Application"
     LANGUAGES CXX
@@ -39,6 +39,8 @@ find_package(Qt6 6.2 REQUIRED COMPONENTS
     Qml
 )
 
+qt_policy(SET QTP0001 NEW) 
+
 # 使Qt CMake命令可用
 qt_standard_project_setup()
 
@@ -46,48 +48,31 @@ qt_standard_project_setup()
 # 源文件组织
 # ============================================================================
 
-# 工具类源文件
-set(UTILS_SOURCES
+set(PROJECT_SOURCES 
+    src/main.cpp
     src/utils/Logger.cpp
     src/utils/Logger.hpp
-    src/utils/PerformanceMonitor.hpp
-    src/utils/LayoutValidator.hpp
+    src/models/SplitPanelNode.cpp
+    src/models/SplitPanelNode.hpp
+    src/models/SplitManager.cpp
+    src/models/SplitManager.hpp
+    src/models/SplitTreeModel.cpp
+    src/models/SplitTreeModel.hpp
 )
 
-# 模型类源文件
-set(MODELS_SOURCES
-    src/models/DockingNode.cpp
-    src/models/DockingNode.hpp
-    src/models/DockingManager.cpp
-    src/models/DockingManager.hpp
-)
+qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
-# 主程序源文件
-set(MAIN_SOURCES
-    src/main.cpp
-)
-
-# 所有源文件
-set(PROJECT_SOURCES
-    ${MAIN_SOURCES}
-    ${UTILS_SOURCES}
-    ${MODELS_SOURCES}
-)
-
-# QML资源文件
-set(PROJECT_RESOURCES
-    qml.qrc
-)
-
-# ============================================================================
-# 目标定义
-# ============================================================================
-
-# 创建可执行目标
-qt_add_executable(${PROJECT_NAME}
-    ${PROJECT_SOURCES}
-    ${PROJECT_RESOURCES}
-)
+qt_add_qml_module(${PROJECT_NAME}
+    URI SplitPanel
+    VERSION 1.0
+    QML_FILES
+        SplitPanel/Main.qml
+        SplitPanel/SplitContainerView.qml
+        SplitPanel/SplitPanelContent.qml
+        SplitPanel/SplitSystemView.qml
+        SplitPanel/SplitNodeRenderer.qml
+        SplitPanel/SplitPanelView.qml
+   )
 
 # ============================================================================
 # 目标属性配置
@@ -158,13 +143,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 # 安装规则
 # ============================================================================
 
-include(GNUInstallDirs)
+# include(GNUInstallDirs)
 
-install(TARGETS ${PROJECT_NAME}
-    BUNDLE DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        COMPONENT Runtime
-)
+# install(TARGETS ${PROJECT_NAME}
+#     BUNDLE DESTINATION .
+#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#         COMPONENT Runtime
+# )
 
 # ============================================================================
 # 构建信息输出

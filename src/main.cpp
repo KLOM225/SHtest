@@ -7,7 +7,7 @@
 #include <QIcon>                  // 应用程序图标
 #include <QDir>                   // 目录操作
 #include "utils/Logger.hpp"       // 日志系统
-#include "models/DockingManager.hpp"  // 停靠管理器
+#include "models/SplitManager.hpp"  // 停靠管理器
 
 /**
  * ============================================================================
@@ -20,7 +20,7 @@
  *   加载主界面
  * 
  * 架构特点：
- *   1. ✅ 单节点系统 - 统一使用DockingNode，无冗余
+ *   1. ✅ 单节点系统 - 统一使用SplitPanelNode，无冗余
  *   2. ✅ 无ItemModel - 直接暴露节点树给QML，减少60%复杂度
  *   3. ✅ 智能指针管理 - std::unique_ptr自动内存管理
  *   4. ✅ 直接绑定 - QML通过rootNode直接访问树结构
@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
     // ========================================
     // 1. 设置应用程序属性
     // ========================================
-    QGuiApplication::setApplicationName("DockingSystemStandalone");
+    QGuiApplication::setApplicationName("SplitPanelStandalone");
     QGuiApplication::setApplicationVersion("1.0.0");
-    QGuiApplication::setOrganizationName("DockingSystem");
+    QGuiApplication::setOrganizationName("SplitPanel");
     
     QGuiApplication app(argc, argv);
     
@@ -56,11 +56,11 @@ int main(int argc, char *argv[])
     QString logPath = Logger::instance()->logFilePath();
     
     Logger::instance()->info("Application", "========================================", {});
-    Logger::instance()->info("Application", "DockingSystem Standalone v1.0.0", {});
+    Logger::instance()->info("Application", "SplitPanel Standalone v1.0.0", {});
     Logger::instance()->info("Application", "========================================", {});
     Logger::instance()->info("Application", "Current working directory: " + currentPath, {});
     Logger::instance()->info("Application", "Log file path: " + logPath, {});
-    Logger::instance()->info("Application", "Architecture: Simplified DockingManager (No ItemModel)", {});
+    Logger::instance()->info("Application", "Architecture: Simplified SplitManager (No ItemModel)", {});
     
     // ========================================
     // 3. 注册QML类型
@@ -68,17 +68,17 @@ int main(int argc, char *argv[])
     Logger::instance()->debug("Application", "Registering QML types...", {});
     
     // 手动注册C++类型到QML
-    qmlRegisterSingletonType<Logger>("DockingSystem", 1, 0, "Logger", 
+    qmlRegisterSingletonType<Logger>("SplitPanel", 1, 0, "Logger", 
         [](QQmlEngine *engine, QJSEngine *scriptEngine) -> QObject * {
             Q_UNUSED(engine)
             Q_UNUSED(scriptEngine)
             return Logger::instance();
         });
     
-    qmlRegisterType<DockingManager>("DockingSystem", 1, 0, "DockingManager");
-    qmlRegisterUncreatableType<DockingNode>("DockingSystem", 1, 0, "DockingNode", "Abstract type");
-    qmlRegisterType<PanelNode>("DockingSystem", 1, 0, "PanelNode");
-    qmlRegisterType<ContainerNode>("DockingSystem", 1, 0, "ContainerNode");
+    qmlRegisterType<SplitManager>("SplitPanel", 1, 0, "SplitManager");
+    qmlRegisterUncreatableType<SplitPanelNode>("SplitPanel", 1, 0, "SplitPanelNode", "Abstract type");
+    qmlRegisterType<PanelNode>("SplitPanel", 1, 0, "PanelNode");
+    qmlRegisterType<ContainerNode>("SplitPanel", 1, 0, "ContainerNode");
     
     Logger::instance()->debug("Application", "QML types registered successfully", {});
     
@@ -126,12 +126,11 @@ int main(int argc, char *argv[])
     // ========================================
     // 7. 加载主QML文件
     // ========================================
-    const QUrl url(u"qrc:/qml/Main.qml"_qs);
     Logger::instance()->info("Application", "Loading main QML file...", {});
-    Logger::instance()->debug("Application", "QML URL: " + url.toString(), {});
     
-    engine.load(url);
+    engine.loadFromModule("SplitPanel", "Main");
     
+
     // ========================================
     // 7. 检查加载结果
     // ========================================

@@ -1,25 +1,25 @@
 /**
  * ============================================================================
- * DockingNode.cpp - 停靠节点实现文件
+ * SplitPanelNod.cpp - 停靠节点实现文件
  * ============================================================================
  * 
  * 说明：
  *   本文件几乎为空，因为所有实现都在头文件中内联了
  * 
  * 原因：
- *   1. DockingNode 是纯虚基类，只声明接口
+ *   1. SplitPanelNod 是纯虚基类，只声明接口
  *   2. PanelNode 和 ContainerNode 的方法都很简单
  *   3. 内联实现可以提高性能（减少函数调用开销）
  *   4. 所有方法都在头文件中使用inline实现
  * 
  * 类结构：
- *   DockingNode (抽象基类)
+ *   SplitPanelNod (抽象基类)
  *   ├─ PanelNode (面板节点，叶子节点)
  *   └─ ContainerNode (容器节点，分支节点)
  */
 
-#include "DockingNode.hpp"
+#include "SplitPanelNode.hpp"
 
-// DockingNode 是纯虚基类，无需实现
+// SplitPanelNod 是纯虚基类，无需实现
 // PanelNode 和 ContainerNode 的方法都在头文件中内联实现了
 

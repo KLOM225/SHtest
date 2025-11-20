@@ -1,25 +1,25 @@
 import QtQuick
 import QtQuick.Controls
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 // ============================================================================
-// DockingSystemView.qml - 停靠系统视图
+// SplitSystemView.qml - 停靠系统视图
 // ============================================================================
 // 
 // 功能：
 //   停靠系统的顶层视图容器，连接数据层和渲染层
 // 
 // 核心机制：
-//   1. 监听dockingManager.rootNode的变化
+//   1. 监听splitManager.rootNode的变化
 //   2. 通过NodeRenderer递归渲染整棵节点树
 //   3. 接收子组件的信号（添加/删除面板）并转发给DockingManager
 //   4. 显示空状态提示（无面板时）
 // 
 // 数据流：
-//   DockingManager → rootNode → NodeRenderer → 递归渲染各个Panel和Container
+//   SplitManager → rootNode → NodeRenderer → 递归渲染各个Panel和Container
 // 
 // 信号流：
-//   用户操作 → PanelView/ContainerView → NodeRenderer → 本组件 → DockingManager
+//   用户操作 → PanelView/ContainerView → NodeRenderer → 本组件 → SplitManager
 // 
 // ============================================================================
 
@@ -30,7 +30,7 @@ Item {
     // 属性定义
     // ========================================================================
     
-    required property DockingManager dockingManager  // 停靠管理器实例
+    required property SplitManager splitManager  // 停靠管理器实例
     
     // ========================================================================
     // 信号定义
@@ -55,10 +55,10 @@ Item {
     // 处理添加面板请求
     function handleAddPanel(targetId, direction) {
         var panelId = generatePanelId()
-        dockingManager.addPanelAt(
+        splitManager.addPanelAt(
             panelId,
             "新面板",
-            "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml",
+            "SplitPanelContent.qml",
             targetId,
             direction
         )
@@ -66,10 +66,10 @@ Item {
     
     // 处理删除面板请求
     function handleRemovePanel(panelId) {
-        Logger.debug("DockingSystemView", "Remove panel signal received", {
+        Logger.debug("SplitSystemView", "Remove panel signal received", {
             "panelId": panelId
         })
-        dockingManager.removePanel(panelId)
+        splitManager.removePanel(panelId)
     }
     
     // ========================================================================
@@ -78,7 +78,7 @@ Item {
     
     // 判断是否为空状态（无面板）
     function isEmptyState() {
-        return !dockingManager.rootNode
+        return !splitManager.rootNode
     }
     
     // ========================================================================
@@ -87,18 +87,18 @@ Item {
     
     // 记录视图初始化
     function logViewInitialized() {
-        Logger.info("DockingSystemView", "View initialized", {})
+        Logger.info("SplitSystemView", "View initialized", {})
     }
     
     // ========================================================================
     // UI组件：根节点渲染器
     // ========================================================================
     
-    NodeRenderer {
+    SplitNodeRenderer {
         id: rootRenderer
         anchors.fill: parent
-        node: dockingManager.rootNode  // 绑定根节点，自动监听变化
-        manager: dockingManager
+        node: splitManager.rootNode  // 绑定根节点，自动监听变化
+        manager: splitManager
     }
     
     // 监听渲染器的信号并转发
@@ -122,47 +122,43 @@ Item {
         visible: root.isEmptyState()
     }
     
+    // 空状态提示组件
+    component EmptyStatePrompt: Rectangle {
+        anchors.centerIn: parent
+        width: 300
+        height: 200
+        color: "#2b2b2b"
+        radius: 10
+        
+        Column {
+            anchors.centerIn: parent
+            spacing: 20
+            
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "📦"
+                font.pixelSize: 48
+            }
+            
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "没有面板"
+                color: "white"
+                font.pixelSize: 18
+            }
+            
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "点击上方按钮添加面板"
+                color: "#888888"
+                font.pixelSize: 14
+            }
+        }
+    }
+    
     // ========================================================================
     // 生命周期回调
     // ========================================================================
     
     Component.onCompleted: logViewInitialized()
-}
-
-// ============================================================================
-// 可复用组件定义
-// ============================================================================
-
-// 空状态提示组件
-component EmptyStatePrompt: Rectangle {
-    anchors.centerIn: parent
-    width: 300
-    height: 200
-    color: "#2b2b2b"
-    radius: 10
-    
-    Column {
-        anchors.centerIn: parent
-        spacing: 20
-        
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "📦"
-            font.pixelSize: 48
-        }
-        
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "没有面板"
-            color: "white"
-            font.pixelSize: 18
-        }
-        
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "点击上方按钮添加面板"
-            color: "#888888"
-            font.pixelSize: 14
-        }
-    }
 }

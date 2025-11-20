@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 // ============================================================================
-// PanelView.qml - 面板视图组件
+// SplitPanelView.qml - 面板视图组件
 // ============================================================================
 // 
 // 功能：
@@ -58,7 +58,7 @@ Rectangle {
     // 处理删除面板请求
     function handleRemovePanel() {
         if (!root.panel) return
-        Logger.debug("PanelView", "Close button clicked", {
+        Logger.debug("SplitPanelView", "Close button clicked", {
             "panelId": root.panel.nodeId,
             "title": root.panel.title
         })
@@ -112,7 +112,7 @@ Rectangle {
     function logPanelCreated() {
         if (!root.panel) return
         
-        Logger.debug("PanelView", "Panel view created", {
+        Logger.debug("SplitPanelView", "Panel view created", {
             "panelId": root.panel.nodeId,
             "title": root.panel.title,
             "qmlSource": root.panel.qmlSource
@@ -123,7 +123,7 @@ Rectangle {
     function logPanelDestroyed() {
         if (!root.panel) return
         
-        Logger.debug("PanelView", "Panel view destroyed", {
+        Logger.debug("SplitPanelView", "Panel view destroyed", {
             "panelId": root.panel.nodeId,
             "title": root.panel.title
         })
@@ -183,25 +183,25 @@ Rectangle {
                 DirectionButton {
                     text: "↑"
                     tooltipText: "在上方添加面板"
-                    onClicked: handleAddPanel(DockingManager.Top)
+                    onClicked: handleAddPanel(SplitManager.Top)
                 }
                 
                 DirectionButton {
                     text: "↓"
                     tooltipText: "在下方添加面板"
-                    onClicked: handleAddPanel(DockingManager.Bottom)
+                    onClicked: handleAddPanel(SplitManager.Bottom)
                 }
                 
                 DirectionButton {
                     text: "←"
                     tooltipText: "在左侧添加面板"
-                    onClicked: handleAddPanel(DockingManager.Left)
+                    onClicked: handleAddPanel(SplitManager.Left)
                 }
                 
                 DirectionButton {
                     text: "→"
                     tooltipText: "在右侧添加面板"
-                    onClicked: handleAddPanel(DockingManager.Right)
+                    onClicked: handleAddPanel(SplitManager.Right)
                 }
                 
                 // 分隔线
@@ -256,112 +256,112 @@ Rectangle {
     
     Component.onCompleted: logPanelCreated()
     Component.onDestruction: logPanelDestroyed()
-}
-
-// ============================================================================
-// 可复用组件定义（必须在文件末尾）
-// ============================================================================
-
-// 方向按钮组件
-component DirectionButton: ToolButton {
-    property string tooltipText: ""
     
-    Layout.preferredWidth: 24
-    Layout.preferredHeight: 24
-    font.pixelSize: 14
+    // ========================================================================
+    // 可复用组件定义
+    // ========================================================================
     
-    ToolTip.visible: hovered
-    ToolTip.text: tooltipText
-    
-    background: Rectangle {
-        color: parent.hovered ? "#3c3c3c" : "transparent"
-        radius: 3
-    }
-    
-    contentItem: Text {
-        text: parent.text
-        font: parent.font
-        color: "#e6e6e6"
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-    }
-}
-
-// 关闭按钮组件
-component CloseButton: ToolButton {
-    Layout.preferredWidth: 24
-    Layout.preferredHeight: 24
-    text: "✕"
-    font.pixelSize: 14
-    
-    ToolTip.visible: hovered
-    ToolTip.text: "关闭面板"
-    
-    background: Rectangle {
-        color: parent.hovered ? "#e74856" : "transparent"
-        radius: 3
-    }
-    
-    contentItem: Text {
-        text: parent.text
-        font: parent.font
-        color: "#e6e6e6"
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-    }
-}
-
-// 加载指示器组件
-component LoadingIndicator: Rectangle {
-    anchors.fill: parent
-    color: "#1e1e1e"
-    
-    Column {
-        anchors.centerIn: parent
-        spacing: 10
+    // 方向按钮组件
+    component DirectionButton: ToolButton {
+        property string tooltipText: ""
         
-        BusyIndicator {
-            anchors.horizontalCenter: parent.horizontalCenter
-            running: true
+        Layout.preferredWidth: 24
+        Layout.preferredHeight: 24
+        font.pixelSize: 14
+        
+        ToolTip.visible: hovered
+        ToolTip.text: tooltipText
+        
+        background: Rectangle {
+            color: parent.hovered ? "#3c3c3c" : "transparent"
+            radius: 3
         }
         
-        Text {
-            text: "加载中..."
-            color: "#888888"
-            font.pixelSize: 14
+        contentItem: Text {
+            text: parent.text
+            font: parent.font
+            color: "#e6e6e6"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
         }
     }
-}
-
-// 错误指示器组件
-component ErrorIndicator: Rectangle {
-    property string errorSource: ""
     
-    anchors.fill: parent
-    color: "#1e1e1e"
-    
-    Column {
-        anchors.centerIn: parent
-        spacing: 10
+    // 关闭按钮组件
+    component CloseButton: ToolButton {
+        Layout.preferredWidth: 24
+        Layout.preferredHeight: 24
+        text: "✕"
+        font.pixelSize: 14
         
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "⚠"
-            color: "#e74856"
-            font.pixelSize: 48
+        ToolTip.visible: hovered
+        ToolTip.text: "关闭面板"
+        
+        background: Rectangle {
+            color: parent.hovered ? "#e74856" : "transparent"
+            radius: 3
         }
         
-        Text {
-            text: "加载失败"
-            color: "#e74856"
-            font.pixelSize: 14
+        contentItem: Text {
+            text: parent.text
+            font: parent.font
+            color: "#e6e6e6"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
         }
+    }
+    
+    // 加载指示器组件
+    component LoadingIndicator: Rectangle {
+        anchors.fill: parent
+        color: "#1e1e1e"
         
-        Text {
-            text: errorSource
-            color: "#666666"
-            font.pixelSize: 12
-            font.family: "Consolas"
+        Column {
+            anchors.centerIn: parent
+            spacing: 10
+            
+            BusyIndicator {
+                anchors.horizontalCenter: parent.horizontalCenter
+                running: true
+            }
+            
+            Text {
+                text: "加载中..."
+                color: "#888888"
+                font.pixelSize: 14
+            }
+        }
+    }
+    
+    // 错误指示器组件
+    component ErrorIndicator: Rectangle {
+        property string errorSource: ""
+        
+        anchors.fill: parent
+        color: "#1e1e1e"
+        
+        Column {
+            anchors.centerIn: parent
+            spacing: 10
+            
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "⚠"
+                color: "#e74856"
+                font.pixelSize: 48
+            }
+            
+            Text {
+                text: "加载失败"
+                color: "#e74856"
+                font.pixelSize: 14
+            }
+            
+            Text {
+                text: errorSource
+                color: "#666666"
+                font.pixelSize: 12
+                font.family: "Consolas"
+            }
         }
     }
 }

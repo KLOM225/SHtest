@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Controls
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 /**
  * ============================================================================
- * NodeRenderer.qml - 节点渲染器（路由器）
+ * SplitNodeRenderer.qml - 节点渲染器（路由器）
  * ============================================================================
  * 
  * 作用：
@@ -21,7 +21,7 @@ import DockingSystem 1.0
  *   使用 Loader + switch 实现动态加载
  * 
  * 数据流：
- *   DockingNode (C++) → NodeRenderer → PanelView/ContainerView (QML)
+ *   SplitPanelNod (C++) → NodeRenderer → PanelView/ContainerView (QML)
  */
 Loader {
     id: root
@@ -32,19 +32,19 @@ Loader {
     
     /**
      * node - 要渲染的节点
-     * 类型：DockingNode (可以是 PanelNode 或 ContainerNode)
-     * 绑定：通常绑定到 dockingManager.rootNode
+     * 类型：SplitPanelNod (可以是 PanelNode 或 ContainerNode)
+     * 绑定：通常绑定到 SplitManager.rootNode
      * 
      * 变化时：
      *   node 改变 → sourceComponent 重新求值 → 加载新组件
      */
-    property DockingNode node: null
+    property SplitPanelNode node: null
     
     /**
-     * manager - DockingManager 实例
+     * manager - SplitManager 实例
      * 用途：传递给子组件，用于操作树（添加/删除面板）
      */
-    property DockingManager manager: null
+    property SplitManager manager: null
     
     // ========================================================================
     // 信号定义（向上传递）
@@ -60,7 +60,7 @@ Loader {
      *   子组件（PanelView/ContainerView）发出 addPanel 信号
      * 
      * 传递链：
-     *   PanelView/ContainerView → NodeRenderer → DockingSystemView → DockingManager
+     *   PanelView/ContainerView → NodeRenderer → SplitSystemView → SplitManager
      */
     signal addPanel(string targetId, int direction)
     
@@ -72,7 +72,7 @@ Loader {
      *   用户点击面板的关闭按钮
      * 
      * 传递链：
-     *   PanelView → ContainerView → NodeRenderer → DockingSystemView → DockingManager
+     *   PanelView → ContainerView → NodeRenderer → SplitSystemView → SplitManager
      */
     signal removePanel(string panelId)
     
@@ -98,9 +98,9 @@ Loader {
         
         // 根据节点类型选择组件
         switch (node.nodeType) {
-            case DockingNode.Panel:
+            case SplitPanelNode.Panel:
                 return panelComponent      // 面板 → PanelView
-            case DockingNode.Container:
+            case SplitPanelNode.Container:
                 return containerComponent  // 容器 → ContainerView
             default:
                 return null
@@ -147,7 +147,7 @@ Loader {
     Component {
         id: panelComponent
         
-        PanelView {
+        SplitPanelView {
             panel: root.node  // 绑定面板节点
         }
     }
@@ -165,7 +165,7 @@ Loader {
     Component {
         id: containerComponent
         
-        ContainerView {
+        SplitContainerView {
             container: root.node  // 绑定容器节点
             manager: root.manager // 传递管理器
         }
@@ -182,7 +182,7 @@ Loader {
      *   将子组件（PanelView/ContainerView）的信号向上传递
      * 
      * 信号冒泡链：
-     *   PanelView/ContainerView → NodeRenderer → DockingSystemView → Main
+     *   PanelView/ContainerView → NodeRenderer → SplitSystemView → Main
      */
     Connections {
         target: root.item  // 监听 Loader 加载的组件实例

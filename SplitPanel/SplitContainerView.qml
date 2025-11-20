@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 // ============================================================================
-// ContainerView.qml - 容器视图组件
+// SplitContainerView.qml - 容器视图组件
 // ============================================================================
 // 
 // 功能：
@@ -68,9 +68,9 @@ SplitView {
         if (!root.container || !root.container.firstChild) return null
         
         switch (root.container.firstChild.nodeType) {
-            case DockingNode.Panel:
+            case SplitPanelNode.Panel:
                 return panelComponent
-            case DockingNode.Container:
+            case SplitPanelNode.Container:
                 return null  // 使用source加载文件
             default:
                 return null
@@ -80,8 +80,8 @@ SplitView {
     // 获取第一个子节点的文件路径
     function getFirstChildSource() {
         if (!root.container || !root.container.firstChild) return ""
-        if (root.container.firstChild.nodeType === DockingNode.Container) {
-            return "ContainerView.qml"
+        if (root.container.firstChild.nodeType === SplitPanelNode.Container) {
+            return "SplitContainerView.qml"
         }
         return ""
     }
@@ -91,9 +91,9 @@ SplitView {
         if (!root.container || !root.container.secondChild) return null
         
         switch (root.container.secondChild.nodeType) {
-            case DockingNode.Panel:
+            case SplitPanelNode.Panel:
                 return panelComponent2
-            case DockingNode.Container:
+            case SplitPanelNode.Container:
                 return null
             default:
                 return null
@@ -103,8 +103,8 @@ SplitView {
     // 获取第二个子节点的文件路径
     function getSecondChildSource() {
         if (!root.container || !root.container.secondChild) return ""
-        if (root.container.secondChild.nodeType === DockingNode.Container) {
-            return "ContainerView.qml"
+        if (root.container.secondChild.nodeType === SplitPanelNode.Container) {
+            return "SplitContainerView.qml"
         }
         return ""
     }
@@ -164,7 +164,7 @@ SplitView {
     // 第一个子节点加载完成
     function handleFirstLoaded(item) {
         if (!item || !root.container || !root.container.firstChild) return
-        if (root.container.firstChild.nodeType !== DockingNode.Container) return
+        if (root.container.firstChild.nodeType !== SplitPanelNode.Container) return
         
         item.container = Qt.binding(function() { 
             return root.container ? root.container.firstChild : null 
@@ -175,7 +175,7 @@ SplitView {
     // 第二个子节点加载完成
     function handleSecondLoaded(item) {
         if (!item || !root.container || !root.container.secondChild) return
-        if (root.container.secondChild.nodeType !== DockingNode.Container) return
+        if (root.container.secondChild.nodeType !== SplitPanelNode.Container) return
         
         item.container = Qt.binding(function() { 
             return root.container ? root.container.secondChild : null 
@@ -215,7 +215,7 @@ SplitView {
     
     // 处理删除面板请求
     function handleRemovePanel(panelId, source) {
-        Logger.debug("ContainerView", "Close requested for " + source + " panel", {
+        Logger.debug("SplitContainerView", "Close requested for " + source + " panel", {
             "panelId": panelId
         })
         root.removePanel(panelId)
@@ -244,7 +244,7 @@ SplitView {
     // Panel组件模板（用于第一个子节点）
     Component {
         id: panelComponent
-        PanelView {
+        SplitPanelView {
             panel: root.container ? root.container.firstChild : null
         }
     }
@@ -290,7 +290,7 @@ SplitView {
     // Panel组件模板（用于第二个子节点）
     Component {
         id: panelComponent2
-        PanelView {
+        SplitPanelView {
             panel: root.container ? root.container.secondChild : null
         }
     }
@@ -308,24 +308,24 @@ SplitView {
             handleRemovePanel(panelId, "second")
         }
     }
-}
 
-// ============================================================================
-// 可复用组件定义
-// ============================================================================
+    // ========================================================================
+    // 可复用组件定义
+    // ========================================================================
 
-// 分割手柄组件（可拖动，鼠标悬停时高亮）
-component SplitHandle: Rectangle {
-    implicitWidth: root.orientation === Qt.Horizontal ? 4 : parent.width
-    implicitHeight: root.orientation === Qt.Vertical ? 4 : parent.height
-    color: hoverHandler.hovered ? "#58a6ff" : "#3c3c3c"
-    
-    Behavior on color {
-        ColorAnimation { duration: 150 }
-    }
-    
-    HoverHandler {
-        id: hoverHandler
+    // 分割手柄组件（可拖动，鼠标悬停时高亮）
+    component SplitHandle: Rectangle {
+        implicitWidth: root.orientation === Qt.Horizontal ? 4 : parent.width
+        implicitHeight: root.orientation === Qt.Vertical ? 4 : parent.height
+        color: hoverHandler.hovered ? "#58a6ff" : "#3c3c3c"
+        
+        Behavior on color {
+            ColorAnimation { duration: 150 }
+        }
+        
+        HoverHandler {
+            id: hoverHandler
+        }
     }
 }
 

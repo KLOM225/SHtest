@@ -1,4 +1,4 @@
-#include "DockingTreeModel.hpp"
+#include "SplitTreeModel.hpp"
 #include "../utils/Logger.hpp"
 #include <QDebug>
 #include <algorithm>
@@ -7,13 +7,13 @@
 // 构造函数和析构函数
 // ============================================================================
 
-DockingTreeModel::DockingTreeModel(QObject* parent)
+SplitTreeModel::SplitTreeModel(QObject* parent)
     : QAbstractItemModel(parent)
 {
-    LOG_INFO("DockingTreeModel", "Tree model initialized");
+    LOG_INFO("SplitTreeModel", "Tree model initialized");
 }
 
-void DockingTreeModel::setMinPanelSize(double size)
+void SplitTreeModel::setMinPanelSize(double size)
 {
     double validated = qBound(50.0, size, 1000.0);
     if (!qFuzzyCompare(m_minPanelSize, validated)) {
@@ -26,7 +26,7 @@ void DockingTreeModel::setMinPanelSize(double size)
 // QAbstractItemModel 接口实现
 // ============================================================================
 
-QModelIndex DockingTreeModel::index(int row, int column, const QModelIndex& parent) const
+QModelIndex SplitTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
     if (!hasIndex(row, column, parent))
         return QModelIndex();
@@ -42,7 +42,7 @@ QModelIndex DockingTreeModel::index(int row, int column, const QModelIndex& pare
     return QModelIndex();
 }
 
-QModelIndex DockingTreeModel::parent(const QModelIndex& child) const
+QModelIndex SplitTreeModel::parent(const QModelIndex& child) const
 {
     if (!child.isValid())
         return QModelIndex();
@@ -58,7 +58,7 @@ QModelIndex DockingTreeModel::parent(const QModelIndex& child) const
     return createIndex(parentNode->row(), 0, parentNode);
 }
 
-int DockingTreeModel::rowCount(const QModelIndex& parent) const
+int SplitTreeModel::rowCount(const QModelIndex& parent) const
 {
     if (parent.column() > 0)
         return 0;
@@ -67,13 +67,13 @@ int DockingTreeModel::rowCount(const QModelIndex& parent) const
     return parentNode ? parentNode->childCount() : 0;
 }
 
-int DockingTreeModel::columnCount(const QModelIndex& parent) const
+int SplitTreeModel::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent)
     return 1;  // 单列树
 }
 
-QVariant DockingTreeModel::data(const QModelIndex& index, int role) const
+QVariant SplitTreeModel::data(const QModelIndex& index, int role) const
 {
     if (!index.isValid())
         return QVariant();
@@ -84,7 +84,7 @@ QVariant DockingTreeModel::data(const QModelIndex& index, int role) const
     
     switch (role) {
     case Qt::DisplayRole:
-        return node->type == NodeType::Panel ? node->title : QString("Split[%1]").arg(node->id);
+        return node->type == SplitTreeModel::NodeType::Panel ? node->title : QString("Split[%1]").arg(node->id);
         
     case NodeTypeRole:
         return static_cast<int>(node->type);
@@ -93,19 +93,19 @@ QVariant DockingTreeModel::data(const QModelIndex& index, int role) const
         return node->id;
         
     case TitleRole:
-        return node->type == NodeType::Panel ? node->title : QString();
+        return node->type == SplitTreeModel::NodeType::Panel ? node->title : QString();
         
     case QmlSourceRole:
-        return node->type == NodeType::Panel ? node->qmlSource : QString();
+        return node->type == SplitTreeModel::NodeType::Panel ? node->qmlSource : QString();
         
     case CanCloseRole:
-        return node->type == NodeType::Panel ? node->canClose : false;
+        return node->type == SplitTreeModel::NodeType::Panel ? node->canClose : false;
         
     case OrientationRole:
-        return node->type == NodeType::Split ? static_cast<int>(node->orientation) : -1;
+        return node->type == SplitTreeModel::NodeType::Split ? static_cast<int>(node->orientation) : -1;
         
     case SplitRatioRole:
-        return node->type == NodeType::Split ? node->splitRatio : 0.5;
+        return node->type == SplitTreeModel::NodeType::Split ? node->splitRatio : 0.5;
         
     case MinSizeRole:
         return node->minSize;
@@ -118,7 +118,7 @@ QVariant DockingTreeModel::data(const QModelIndex& index, int role) const
     }
 }
 
-bool DockingTreeModel::setData(const QModelIndex& index, const QVariant& value, int role)
+bool SplitTreeModel::setData(const QModelIndex& index, const QVariant& value, int role)
 {
     if (!index.isValid())
         return false;
@@ -131,28 +131,28 @@ bool DockingTreeModel::setData(const QModelIndex& index, const QVariant& value, 
     
     switch (role) {
     case TitleRole:
-        if (node->type == NodeType::Panel) {
+        if (node->type == SplitTreeModel::NodeType::Panel) {
             node->title = value.toString();
             changed = true;
         }
         break;
         
     case QmlSourceRole:
-        if (node->type == NodeType::Panel) {
+        if (node->type == SplitTreeModel::NodeType::Panel) {
             node->qmlSource = value.toString();
             changed = true;
         }
         break;
         
     case CanCloseRole:
-        if (node->type == NodeType::Panel) {
+        if (node->type == SplitTreeModel::NodeType::Panel) {
             node->canClose = value.toBool();
             changed = true;
         }
         break;
         
     case SplitRatioRole:
-        if (node->type == NodeType::Split) {
+        if (node->type == SplitTreeModel::NodeType::Split) {
             node->splitRatio = qBound(0.1, value.toDouble(), 0.9);
             changed = true;
         }
@@ -175,7 +175,7 @@ bool DockingTreeModel::setData(const QModelIndex& index, const QVariant& value, 
     return false;
 }
 
-Qt::ItemFlags DockingTreeModel::flags(const QModelIndex& index) const
+Qt::ItemFlags SplitTreeModel::flags(const QModelIndex& index) const
 {
     if (!index.isValid())
         return Qt::NoItemFlags;
@@ -183,7 +183,7 @@ Qt::ItemFlags DockingTreeModel::flags(const QModelIndex& index) const
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
 }
 
-QHash<int, QByteArray> DockingTreeModel::roleNames() const
+QHash<int, QByteArray> SplitTreeModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles[Qt::DisplayRole] = "display";
@@ -203,16 +203,16 @@ QHash<int, QByteArray> DockingTreeModel::roleNames() const
 // 面板管理操作
 // ============================================================================
 
-bool DockingTreeModel::addPanel(const QString& panelId, const QString& title, const QString& qmlSource)
+bool SplitTreeModel::addPanel(const QString& panelId, const QString& title, const QString& qmlSource)
 {
     if (panelId.isEmpty()) {
-        LOG_ERROR("DockingTreeModel", "Panel ID cannot be empty");
+        LOG_ERROR("SplitTreeModel", "Panel ID cannot be empty");
         return false;
     }
     
     // 检查面板是否已存在
     if (findNodeById(m_root.get(), panelId)) {
-        LOG_ERROR("DockingTreeModel", "Panel already exists");
+        LOG_ERROR("SplitTreeModel", "Panel already exists");
         return false;
     }
     
@@ -229,7 +229,7 @@ bool DockingTreeModel::addPanel(const QString& panelId, const QString& title, co
         emit panelAdded(panelId);
         emit layoutChanged();
         
-        LOG_INFO("DockingTreeModel", "Panel set as root");
+        LOG_INFO("SplitTreeModel", "Panel set as root");
         return true;
     }
     
@@ -242,17 +242,17 @@ bool DockingTreeModel::addPanel(const QString& panelId, const QString& title, co
     return insertPanelAt(std::move(panel), target, DropZone::Bottom);
 }
 
-bool DockingTreeModel::addPanelAt(const QString& panelId, const QString& title, const QString& qmlSource,
+bool SplitTreeModel::addPanelAt(const QString& panelId, const QString& title, const QString& qmlSource,
                                    const QString& targetId, int dropZone)
 {
     if (panelId.isEmpty()) {
-        LOG_ERROR("DockingTreeModel", "Panel ID cannot be empty");
+        LOG_ERROR("SplitTreeModel", "Panel ID cannot be empty");
         return false;
     }
     
     // 检查面板是否已存在
     if (findNodeById(m_root.get(), panelId)) {
-        LOG_ERROR("DockingTreeModel", "Panel already exists");
+        LOG_ERROR("SplitTreeModel", "Panel already exists");
         return false;
     }
     
@@ -280,11 +280,11 @@ bool DockingTreeModel::addPanelAt(const QString& panelId, const QString& title, 
     return insertPanelAt(std::move(panel), target, static_cast<DropZone>(dropZone));
 }
 
-bool DockingTreeModel::removePanel(const QString& panelId)
+bool SplitTreeModel::removePanel(const QString& panelId)
 {
     TreeNode* node = findNodeById(m_root.get(), panelId);
-    if (!node || node->type != NodeType::Panel) {
-        LOG_ERROR("DockingTreeModel", "Panel not found");
+    if (!node || node->type != SplitTreeModel::NodeType::Panel) {
+        LOG_ERROR("SplitTreeModel", "Panel not found");
         return false;
     }
     
@@ -304,8 +304,8 @@ bool DockingTreeModel::removePanel(const QString& panelId)
     
     // 获取父节点
     TreeNode* parent = node->parent;
-    if (!parent || parent->type != NodeType::Split) {
-        LOG_ERROR("DockingTreeModel", "Invalid parent node");
+    if (!parent || parent->type != SplitTreeModel::NodeType::Split) {
+        LOG_ERROR("SplitTreeModel", "Invalid parent node");
         return false;
     }
     
@@ -357,7 +357,7 @@ bool DockingTreeModel::removePanel(const QString& panelId)
     return true;
 }
 
-QModelIndex DockingTreeModel::findPanelIndex(const QString& panelId) const
+QModelIndex SplitTreeModel::findPanelIndex(const QString& panelId) const
 {
     TreeNode* node = findNodeById(m_root.get(), panelId);
     if (!node)
@@ -366,10 +366,10 @@ QModelIndex DockingTreeModel::findPanelIndex(const QString& panelId) const
     return createIndexForNode(node);
 }
 
-bool DockingTreeModel::updateSplitRatio(const QString& containerId, double ratio)
+bool SplitTreeModel::updateSplitRatio(const QString& containerId, double ratio)
 {
     TreeNode* node = findNodeById(m_root.get(), containerId);
-    if (!node || node->type != NodeType::Split) {
+    if (!node || node->type != SplitTreeModel::NodeType::Split) {
         return false;
     }
     
@@ -377,7 +377,7 @@ bool DockingTreeModel::updateSplitRatio(const QString& containerId, double ratio
     return setData(idx, ratio, SplitRatioRole);
 }
 
-void DockingTreeModel::clear()
+void SplitTreeModel::clear()
 {
     if (!m_root)
         return;
@@ -395,7 +395,7 @@ void DockingTreeModel::clear()
 // 布局序列化
 // ============================================================================
 
-QVariantMap DockingTreeModel::saveLayout() const
+QVariantMap SplitTreeModel::saveLayout() const
 {
     QVariantMap layout;
     layout["version"] = "2.0";  // 新版本标识
@@ -409,16 +409,16 @@ QVariantMap DockingTreeModel::saveLayout() const
     return layout;
 }
 
-bool DockingTreeModel::loadLayout(const QVariantMap& layout)
+bool SplitTreeModel::loadLayout(const QVariantMap& layout)
 {
     if (layout.isEmpty()) {
-        LOG_ERROR("DockingTreeModel", "Layout data is empty");
+        LOG_ERROR("SplitTreeModel", "Layout data is empty");
         return false;
     }
     
     QString version = layout.value("version").toString();
     if (version != "2.0") {
-        LOG_ERROR("DockingTreeModel", "Unsupported layout version");
+        LOG_ERROR("SplitTreeModel", "Unsupported layout version");
         return false;
     }
     
@@ -441,7 +441,7 @@ bool DockingTreeModel::loadLayout(const QVariantMap& layout)
     emit minPanelSizeChanged();
     emit layoutChanged();
     
-    LOG_INFO("DockingTreeModel", "Layout loaded successfully");
+    LOG_INFO("SplitTreeModel", "Layout loaded successfully");
     return true;
 }
 
@@ -449,7 +449,7 @@ bool DockingTreeModel::loadLayout(const QVariantMap& layout)
 // 调试辅助
 // ============================================================================
 
-QString DockingTreeModel::dumpTree() const
+QString SplitTreeModel::dumpTree() const
 {
     if (!m_root)
         return "Empty tree";
@@ -457,7 +457,7 @@ QString DockingTreeModel::dumpTree() const
     return dumpNode(m_root.get(), 0);
 }
 
-QVariantList DockingTreeModel::getFlatPanelList() const
+QVariantList SplitTreeModel::getFlatPanelList() const
 {
     QVariantList panels;
     collectPanels(m_root.get(), panels);
@@ -468,11 +468,11 @@ QVariantList DockingTreeModel::getFlatPanelList() const
 // TreeNode 序列化
 // ============================================================================
 
-QVariantMap DockingTreeModel::TreeNode::toVariantMap() const
+QVariantMap SplitTreeModel::TreeNode::toVariantMap() const
 {
     QVariantMap map;
     
-    if (type == NodeType::Panel) {
+    if (type == SplitTreeModel::NodeType::Panel) {
         map["type"] = "panel";
         map["id"] = id;
         map["title"] = title;
@@ -499,7 +499,7 @@ QVariantMap DockingTreeModel::TreeNode::toVariantMap() const
 // 辅助方法实现
 // ============================================================================
 
-DockingTreeModel::TreeNode* DockingTreeModel::getNode(const QModelIndex& index) const
+SplitTreeModel::TreeNode* SplitTreeModel::getNode(const QModelIndex& index) const
 {
     if (index.isValid()) {
         return static_cast<TreeNode*>(index.internalPointer());
@@ -507,7 +507,7 @@ DockingTreeModel::TreeNode* DockingTreeModel::getNode(const QModelIndex& index) 
     return nullptr;
 }
 
-QModelIndex DockingTreeModel::createIndexForNode(TreeNode* node) const
+QModelIndex SplitTreeModel::createIndexForNode(TreeNode* node) const
 {
     if (!node || node == m_root.get())
         return QModelIndex();
@@ -515,7 +515,7 @@ QModelIndex DockingTreeModel::createIndexForNode(TreeNode* node) const
     return createIndex(node->row(), 0, node);
 }
 
-DockingTreeModel::TreeNode* DockingTreeModel::findNodeById(TreeNode* node, const QString& nodeId) const
+SplitTreeModel::TreeNode* SplitTreeModel::findNodeById(TreeNode* node, const QString& nodeId) const
 {
     if (!node || nodeId.isEmpty())
         return nullptr;
@@ -523,7 +523,7 @@ DockingTreeModel::TreeNode* DockingTreeModel::findNodeById(TreeNode* node, const
     if (node->id == nodeId)
         return node;
     
-    if (node->type == NodeType::Split) {
+    if (node->type == SplitTreeModel::NodeType::Split) {
         if (auto* found = findNodeById(node->firstChild.get(), nodeId))
             return found;
         if (auto* found = findNodeById(node->secondChild.get(), nodeId))
@@ -533,12 +533,12 @@ DockingTreeModel::TreeNode* DockingTreeModel::findNodeById(TreeNode* node, const
     return nullptr;
 }
 
-DockingTreeModel::TreeNode* DockingTreeModel::findRightmostPanel(TreeNode* node) const
+SplitTreeModel::TreeNode* SplitTreeModel::findRightmostPanel(TreeNode* node) const
 {
     if (!node)
         return nullptr;
     
-    if (node->type == NodeType::Panel)
+    if (node->type == SplitTreeModel::NodeType::Panel)
         return node;
     
     // 优先查找右侧/底部
@@ -554,10 +554,10 @@ DockingTreeModel::TreeNode* DockingTreeModel::findRightmostPanel(TreeNode* node)
     return nullptr;
 }
 
-std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::createPanelNode(
+std::unique_ptr<SplitTreeModel::TreeNode> SplitTreeModel::createPanelNode(
     const QString& panelId, const QString& title, const QString& qmlSource)
 {
-    auto node = std::make_unique<TreeNode>(NodeType::Panel, panelId);
+    auto node = std::make_unique<TreeNode>(SplitTreeModel::NodeType::Panel, panelId);
     node->title = title;
     node->qmlSource = qmlSource;
     node->canClose = true;
@@ -565,20 +565,20 @@ std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::createPanelNode(
     return node;
 }
 
-std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::createSplitNode(
+std::unique_ptr<SplitTreeModel::TreeNode> SplitTreeModel::createSplitNode(
     const QString& nodeId, Orientation orientation)
 {
-    auto node = std::make_unique<TreeNode>(NodeType::Split, nodeId);
+    auto node = std::make_unique<TreeNode>(SplitTreeModel::NodeType::Split, nodeId);
     node->orientation = orientation;
     node->splitRatio = 0.5;
     node->minSize = m_minPanelSize;
     return node;
 }
 
-bool DockingTreeModel::insertPanelAt(std::unique_ptr<TreeNode> panel, TreeNode* targetNode, DropZone zone)
+bool SplitTreeModel::insertPanelAt(std::unique_ptr<TreeNode> panel, TreeNode* targetNode, DropZone zone)
 {
     if (!panel || !targetNode) {
-        LOG_ERROR("DockingTreeModel", "Invalid panel or target node");
+        LOG_ERROR("SplitTreeModel", "Invalid panel or target node");
         return false;
     }
     
@@ -604,7 +604,7 @@ bool DockingTreeModel::insertPanelAt(std::unique_ptr<TreeNode> panel, TreeNode* 
         reverseOrder = false;
         break;
     default:
-        LOG_ERROR("DockingTreeModel", "Invalid drop zone");
+        LOG_ERROR("SplitTreeModel", "Invalid drop zone");
         return false;
     }
     
@@ -634,7 +634,7 @@ bool DockingTreeModel::insertPanelAt(std::unique_ptr<TreeNode> panel, TreeNode* 
         TreeNode* parent = targetNode->parent;
         if (!parent) {
             endResetModel();
-            LOG_ERROR("DockingTreeModel", "Target node has no parent");
+            LOG_ERROR("SplitTreeModel", "Target node has no parent");
             return false;
         }
         
@@ -674,14 +674,14 @@ bool DockingTreeModel::insertPanelAt(std::unique_ptr<TreeNode> panel, TreeNode* 
     return true;
 }
 
-std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::loadNodeFromVariant(
+std::unique_ptr<SplitTreeModel::TreeNode> SplitTreeModel::loadNodeFromVariant(
     const QVariantMap& data, TreeNode* parent)
 {
     QString type = data.value("type").toString();
     QString id = data.value("id").toString();
     
     if (type == "panel") {
-        auto node = std::make_unique<TreeNode>(NodeType::Panel, id, parent);
+        auto node = std::make_unique<TreeNode>(SplitTreeModel::NodeType::Panel, id, parent);
         node->title = data.value("title").toString();
         node->qmlSource = data.value("qmlSource").toString();
         node->canClose = data.value("canClose", true).toBool();
@@ -695,7 +695,7 @@ std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::loadNodeFromVarian
             ? Orientation::Horizontal 
             : Orientation::Vertical;
         
-        auto node = std::make_unique<TreeNode>(NodeType::Split, id, parent);
+        auto node = std::make_unique<TreeNode>(SplitTreeModel::NodeType::Split, id, parent);
         node->orientation = orientation;
         node->splitRatio = data.value("splitRatio", 0.5).toDouble();
         node->minSize = data.value("minSize", m_minPanelSize).toDouble();
@@ -714,12 +714,12 @@ std::unique_ptr<DockingTreeModel::TreeNode> DockingTreeModel::loadNodeFromVarian
     return nullptr;
 }
 
-QString DockingTreeModel::generateNodeId()
+QString SplitTreeModel::generateNodeId()
 {
     return QString("node_%1").arg(++m_nodeIdCounter);
 }
 
-void DockingTreeModel::updatePanelCount()
+void SplitTreeModel::updatePanelCount()
 {
     int oldCount = m_panelCount;
     m_panelCount = countPanels(m_root.get());
@@ -729,18 +729,18 @@ void DockingTreeModel::updatePanelCount()
     }
 }
 
-int DockingTreeModel::countPanels(TreeNode* node) const
+int SplitTreeModel::countPanels(TreeNode* node) const
 {
     if (!node)
         return 0;
     
-    if (node->type == NodeType::Panel)
+    if (node->type == SplitTreeModel::NodeType::Panel)
         return 1;
     
     return countPanels(node->firstChild.get()) + countPanels(node->secondChild.get());
 }
 
-QString DockingTreeModel::dumpNode(TreeNode* node, int indent) const
+QString SplitTreeModel::dumpNode(TreeNode* node, int indent) const
 {
     if (!node)
         return "";
@@ -748,7 +748,7 @@ QString DockingTreeModel::dumpNode(TreeNode* node, int indent) const
     QString result;
     QString indentStr = QString("  ").repeated(indent);
     
-    if (node->type == NodeType::Panel) {
+    if (node->type == SplitTreeModel::NodeType::Panel) {
         result = QString("%1Panel[%2]: %3\n").arg(indentStr).arg(node->id).arg(node->title);
     } else {
         QString orientStr = (node->orientation == Orientation::Horizontal) ? "H" : "V";
@@ -767,12 +767,12 @@ QString DockingTreeModel::dumpNode(TreeNode* node, int indent) const
     return result;
 }
 
-void DockingTreeModel::collectPanels(TreeNode* node, QVariantList& panels) const
+void SplitTreeModel::collectPanels(TreeNode* node, QVariantList& panels) const
 {
     if (!node)
         return;
     
-    if (node->type == NodeType::Panel) {
+    if (node->type == SplitTreeModel::NodeType::Panel) {
         QVariantMap panelData;
         panelData["id"] = node->id;
         panelData["title"] = node->title;

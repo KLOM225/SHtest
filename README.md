@@ -50,8 +50,8 @@ PVI/
 │   │   ├── PerformanceMonitor.hpp    # 性能监控
 │   │   └── LayoutValidator.hpp       # 布局验证
 │   └── models/                # 数据模型
-│       ├── DockingNode.hpp/cpp       # 节点基类（Panel、Container）
-│       ├── DockingManager.hpp/cpp    # 核心管理器
+│       ├── SplitPanelNod.hpp/cpp       # 节点基类（Panel、Container）
+│       ├── SplitManager.hpp/cpp    # 核心管理器
 │       ├── DockingTreeModel.hpp/cpp  # 树模型（备用）
 │       └── SplitNode.hpp/cpp         # 分割节点（备用）
 ├── qml/                       # QML视图组件
@@ -158,8 +158,8 @@ cmake --build .
 import DockingSystem 1.0
 
 Window {
-    DockingManager {
-        id: dockingManager
+    SplitManager {
+        id: SplitManager
         minPanelSize: 150
         
         Component.onCompleted: {
@@ -170,7 +170,7 @@ Window {
 
     DockingSystemView {
         anchors.fill: parent
-        dockingManager: dockingManager
+        SplitManager: SplitManager
     }
 }
 ```
@@ -179,12 +179,12 @@ Window {
 
 ```qml
 // direction: Left=1, Right=2, Top=3, Bottom=4
-dockingManager.addPanelAt(
+SplitManager.addPanelAt(
     "newPanel",           // panelId
     "新面板",             // title
     "qrc:/Panel.qml",    // qmlSource
     "targetPanelId",     // 目标面板ID
-    DockingManager.Right // 方向：右侧
+    SplitManager.Right // 方向：右侧
 )
 ```
 
@@ -192,16 +192,16 @@ dockingManager.addPanelAt(
 
 ```qml
 // 保存布局到文件
-var path = dockingManager.getDefaultLayoutPath()
-dockingManager.saveLayoutToFile(path)
+var path = SplitManager.getDefaultLayoutPath()
+SplitManager.saveLayoutToFile(path)
 
 // 从文件加载布局
-dockingManager.loadLayoutFromFile(path)
+SplitManager.loadLayoutFromFile(path)
 ```
 
 ## 核心类说明
 
-### DockingManager
+### SplitManager
 
 核心管理器，负责管理整个停靠系统。
 
@@ -222,7 +222,7 @@ dockingManager.loadLayoutFromFile(path)
 - `clear()` - 清空布局
 - `dumpTree()` - 输出树结构（调试用）
 
-### DockingNode
+### SplitPanelNod
 
 节点基类，使用智能指针管理子节点。
 
@@ -277,15 +277,15 @@ dockingManager.loadLayoutFromFile(path)
 ┌─────────────────────────────────────────────────────────┐
 │                   C++层 (数据模型)                       │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │         DockingManager (核心管理器)             │   │
-│  │  • 管理节点树 (m_root: unique_ptr<DockingNode>)│   │
+│  │         SplitManager (核心管理器)             │   │
+│  │  • 管理节点树 (m_root: unique_ptr<SplitPanelNod>)│   │
 │  │  • 面板映射表 (m_panels: QHash)                │   │
 │  │  • 添加/删除/查找面板                           │   │
 │  │  • 布局序列化/反序列化                          │   │
 │  └─────────────────────────────────────────────────┘   │
 │                         ↓ 拥有                           │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │           DockingNode (节点基类)                │   │
+│  │           SplitPanelNod (节点基类)                │   │
 │  │  ├─ PanelNode (面板节点)                       │   │
 │  │  └─ ContainerNode (容器节点)                   │   │
 │  │       • firstChild, secondChild (unique_ptr)   │   │
@@ -350,7 +350,7 @@ Rectangle {
 然后在DockingManager中加载：
 
 ```qml
-dockingManager.addPanel(
+SplitManager.addPanel(
     "custom1",
     "自定义面板",
     "qrc:/MyCustomPanel.qml"

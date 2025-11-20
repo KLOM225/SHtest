@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
-import DockingSystem 1.0
+import SplitPanel 1.0
 
 // ============================================================================
 // Main.qml - 应用程序主窗口
@@ -17,9 +17,9 @@ import DockingSystem 1.0
 //   3. 退出时：自动保存当前布局到layout.json
 // 
 // 组成：
-//   - DockingManager：数据层，管理所有面板和布局
+//   - SplitManager：数据层，管理所有面板和布局
 //   - 工具栏：提供用户操作按钮
-//   - DockingSystemView：视图层，渲染停靠系统
+//   - SplitSystemView：视图层，渲染停靠系统
 // 
 // ============================================================================
 
@@ -30,20 +30,24 @@ Window {
     visible: true
     title: "停靠系统演示 - Simplified Architecture"
     
+    // 状态文本引用
+    property var statusTextRef: null
+    property var statusTimerRef: null
+    
     // ========================================================================
     // 辅助函数：布局管理
     // ========================================================================
     
     // 初始化默认布局（创建一个欢迎面板）
     function initializeLayout() {
-        dockingManager.addPanel(
+        splitManager.addPanel(
             "welcome_panel",
             "欢迎面板",
-            "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml"
+            "SplitPanelContent.qml"
         )
         
         Logger.info("Main", "Initial layout created", {
-            "panelCount": dockingManager.panelCount
+            "panelCount": splitManager.panelCount
         })
     }
     
@@ -55,10 +59,10 @@ Window {
     function handleAddPanel() {
         var panelId = "panel_" + Date.now()  // 生成唯一ID
         
-        var success = dockingManager.addPanel(
+        var success = splitManager.addPanel(
             panelId,
             "新面板",
-            "qrc:/qt/qml/DockingSystem/DemoPanelContent.qml"
+            "SplitPanelContent.qml"
         )
         
         if (success) {
@@ -74,13 +78,13 @@ Window {
     
     // 处理保存布局请求
     function handleSaveLayout() {
-        var defaultPath = dockingManager.getDefaultLayoutPath()
-        if (dockingManager.saveLayoutToFile(defaultPath)) {
+        var defaultPath = splitManager.getDefaultLayoutPath()
+        if (splitManager.saveLayoutToFile(defaultPath)) {
             Logger.info("Main", "Layout saved successfully", {
                 "path": defaultPath,
-                "panelCount": dockingManager.panelCount
+                "panelCount": splitManager.panelCount
             })
-            showStatus("布局已保存: " + dockingManager.panelCount + " 个面板", true)
+            showStatus("布局已保存: " + splitManager.panelCount + " 个面板", true)
         } else {
             Logger.error("Main", "Failed to save layout", {})
             showStatus("保存失败", false)
@@ -89,13 +93,13 @@ Window {
     
     // 处理加载布局请求
     function handleLoadLayout() {
-        var defaultPath = dockingManager.getDefaultLayoutPath()
-        if (dockingManager.loadLayoutFromFile(defaultPath)) {
+        var defaultPath = splitManager.getDefaultLayoutPath()
+        if (splitManager.loadLayoutFromFile(defaultPath)) {
             Logger.info("Main", "Layout loaded successfully", {
                 "path": defaultPath,
-                "panelCount": dockingManager.panelCount
+                "panelCount": splitManager.panelCount
             })
-            showStatus("布局已加载: " + dockingManager.panelCount + " 个面板", true)
+            showStatus("布局已加载: " + splitManager.panelCount + " 个面板", true)
         } else {
             Logger.error("Main", "Failed to load layout", {})
             showStatus("加载失败或文件不存在", false)
@@ -104,7 +108,7 @@ Window {
     
     // 处理重置布局请求
     function handleResetLayout() {
-        dockingManager.clear()
+        splitManager.clear()
         initializeLayout()
         Logger.info("Main", "Layout reset", {})
     }
@@ -115,10 +119,12 @@ Window {
     
     // 显示状态提示（3秒后自动隐藏）
     function showStatus(message, isSuccess) {
-        statusText.text = message
-        statusText.color = isSuccess ? "#4ec9b0" : "#e74856"
-        statusText.visible = true
-        statusTimer.restart()
+        if (statusTextRef) {
+            statusTextRef.text = message
+            statusTextRef.color = isSuccess ? "#4ec9b0" : "#e74856"
+            statusTextRef.visible = true
+            statusTimerRef.restart()
+        }
     }
     
     // ========================================================================
@@ -135,8 +141,8 @@ Window {
     
     // 处理窗口关闭（自动保存布局）
     function handleClosing() {
-        var defaultPath = dockingManager.getDefaultLayoutPath()
-        if (dockingManager.saveLayoutToFile(defaultPath)) {
+        var defaultPath = splitManager.getDefaultLayoutPath()
+        if (splitManager.saveLayoutToFile(defaultPath)) {
             Logger.info("Main", "Layout auto-saved on exit", {
                 "path": defaultPath
             })
@@ -147,12 +153,12 @@ Window {
     // 数据层：停靠管理器
     // ========================================================================
     
-    DockingManager {
-        id: dockingManager
+    SplitManager {
+        id: splitManager
         minPanelSize: 150  // 全局最小面板尺寸
         
         Component.onCompleted: {
-            Logger.info("Main", "DockingManager created", {
+            Logger.info("Main", "SplitManager created", {
                 "minPanelSize": minPanelSize
             })
             
@@ -172,21 +178,21 @@ Window {
     }
     
     // ========================================================================
-    // 信号监听：DockingManager事件
+    // 信号监听：SplitManager事件
     // ========================================================================
     
     Connections {
-        target: dockingManager
+        target: splitManager
         
         function onPanelAdded(panelId) {
             Logger.info("Main", "Panel added: " + panelId, {
-                "totalPanels": dockingManager.panelCount
+                "totalPanels": splitManager.panelCount
             })
         }
         
         function onPanelRemoved(panelId) {
             Logger.info("Main", "Panel removed: " + panelId, {
-                "totalPanels": dockingManager.panelCount
+                "totalPanels": splitManager.panelCount
             })
         }
     }
@@ -206,10 +212,10 @@ Window {
         }
         
         // 停靠系统视图
-        DockingSystemView {
+        SplitSystemView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            dockingManager: dockingManager
+            splitManager: splitManager
         }
     }
     
@@ -219,81 +225,82 @@ Window {
     
     Component.onCompleted: logWindowCompleted()
     onClosing: handleClosing()
-}
-
-// ============================================================================
-// 可复用组件定义
-// ============================================================================
-
-// 工具栏组件
-component Toolbar: Rectangle {
-    color: "#2b2b2b"
     
-    RowLayout {
-        anchors.fill: parent
-        anchors.margins: 5
-        spacing: 10
+    // 工具栏组件
+    component Toolbar: Rectangle {
+        color: "#2b2b2b"
         
-        // 标题
-        Text {
-            text: "停靠系统演示"
-            color: "white"
-            font.pixelSize: 16
-            font.bold: true
+        Component.onCompleted: {
+            root.statusTextRef = statusText
+            root.statusTimerRef = statusTimer
         }
         
-        // 分隔线
-        Rectangle {
-            width: 1
-            Layout.fillHeight: true
-            color: "#444444"
-        }
-        
-        // 操作按钮
-        Button {
-            text: "添加面板"
-            onClicked: root.handleAddPanel()
-        }
-        
-        Button {
-            text: "保存布局"
-            onClicked: root.handleSaveLayout()
-        }
-        
-        Button {
-            text: "加载布局"
-            onClicked: root.handleLoadLayout()
-        }
-        
-        Button {
-            text: "重置布局"
-            onClicked: root.handleResetLayout()
-        }
-        
-        // 弹性空间
-        Item {
-            Layout.fillWidth: true
-        }
-        
-        // 状态提示文本（3秒后自动隐藏）
-        Text {
-            id: statusText
-            visible: false
-            color: "#4ec9b0"
-            font.pixelSize: 13
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 5
+            spacing: 10
             
-            Timer {
-                id: statusTimer
-                interval: 3000
-                onTriggered: statusText.visible = false
+            // 标题
+            Text {
+                text: "停靠系统演示"
+                color: "white"
+                font.pixelSize: 16
+                font.bold: true
             }
-        }
-        
-        // 面板计数显示
-        Text {
-            text: "面板数量: " + dockingManager.panelCount
-            color: "#aaaaaa"
-            font.pixelSize: 14
+            
+            // 分隔线
+            Rectangle {
+                width: 1
+                Layout.fillHeight: true
+                color: "#444444"
+            }
+            
+            // 操作按钮
+            Button {
+                text: "添加面板"
+                onClicked: root.handleAddPanel()
+            }
+            
+            Button {
+                text: "保存布局"
+                onClicked: root.handleSaveLayout()
+            }
+            
+            Button {
+                text: "加载布局"
+                onClicked: root.handleLoadLayout()
+            }
+            
+            Button {
+                text: "重置布局"
+                onClicked: root.handleResetLayout()
+            }
+            
+            // 弹性空间
+            Item {
+                Layout.fillWidth: true
+            }
+            
+            // 状态提示文本（3秒后自动隐藏）
+            Text {
+                id: statusText
+                visible: false
+                color: "#4ec9b0"
+                font.pixelSize: 13
+                
+                Timer {
+                    id: statusTimer
+                    interval: 3000
+                    onTriggered: statusText.visible = false
+                }
+            }
+            
+            // 面板计数显示
+            Text {
+                text: "面板数量: " + splitManager.panelCount
+                color: "#aaaaaa"
+                font.pixelSize: 14
+            }
         }
     }
 }
