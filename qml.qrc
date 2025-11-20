@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/qt/qml/DockingSystem">
+        <file alias="qmldir">qml/qmldir</file>
+        <file alias="DockingSystemView.qml">qml/DockingSystemView.qml</file>
+        <file alias="NodeRenderer.qml">qml/NodeRenderer.qml</file>
+        <file alias="ContainerView.qml">qml/ContainerView.qml</file>
+        <file alias="PanelView.qml">qml/PanelView.qml</file>
+        <file alias="DemoPanelContent.qml">qml/DemoPanelContent.qml</file>
+    </qresource>
+    <qresource prefix="/">
+        <file alias="qml/Main.qml">qml/Main.qml</file>
+    </qresource>
+</RCC>

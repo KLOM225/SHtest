@@ -1,0 +1,8 @@
+module DockingSystem
+typeinfo DockingSystemStandalone.qmltypes
+prefer :/qt/qml/DockingSystem/
+DockingSystemView 1.0 DockingSystemView.qml
+NodeRenderer 1.0 NodeRenderer.qml
+ContainerView 1.0 ContainerView.qml
+PanelView 1.0 PanelView.qml
+DemoPanelContent 1.0 DemoPanelContent.qml
